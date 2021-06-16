@@ -1,0 +1,124 @@
+Strain Wuhan-N501Y=N501Y
+Strain Wuhan-E484K=E484K
+
+Strain B.1.1.7-E484K=69-70d,144d,E484K,A570D,D614G,P681H,T716I,S982A,D1118H
+Strain B.1.1.7NTD-E484K=69-70d,144d,E484K
+Strain B.1.1.7NTD-N501Y=69-70d,144d,N501Y
+
+Strain B.1.351-E484K=L18F,D80A,D215G,R246I,242-244d,E484K,D614G,A701V
+Strain B.1.351-N501Y=L18F,D80A,D215G,R246I,242-244d,N501Y,D614G,A701V
+Strain B.1.351NTD-E484K=L18F,D80A,D215G,R246I,242-244d,E484K
+
+Strain P.1-N501Y=L18F,T20N,P26S,D138Y,R190S,N501Y,D614G,H655Y,T1027I,V1176F
+Strain P.1-E484K=L18F,T20N,P26S,D138Y,R190S,E484K,D614G,H655Y,T1027I,V1176F
+
+challenge Wuhan-N501Y, Convalescent-02, -0.10
+challenge Wuhan-N501Y, Convalescent-03, -0.13
+challenge Wuhan-N501Y, Convalescent-05, 0.33
+challenge Wuhan-N501Y, Convalescent-06, 0.32
+challenge Wuhan-N501Y, Convalescent-17, 0.04
+challenge Wuhan-N501Y, Convalescent-22, -0.07
+challenge Wuhan-N501Y, Convalescent-24, -0.02
+challenge Wuhan-N501Y, Convalescent-27, -0.02
+challenge Wuhan-N501Y, Convalescent-28, -0.01
+challenge Wuhan-N501Y, Convalescent-33, -0.09
+
+challenge Wuhan-E484K, Convalescent-02, -1.84
+challenge Wuhan-E484K, Convalescent-03, -0.69
+challenge Wuhan-E484K, Convalescent-05, -1.44
+challenge Wuhan-E484K, Convalescent-06, 0.11
+challenge Wuhan-E484K, Convalescent-17, -1.92
+challenge Wuhan-E484K, Convalescent-22, -0.55
+challenge Wuhan-E484K, Convalescent-24, -0.99
+challenge Wuhan-E484K, Convalescent-27, -0.81
+challenge Wuhan-E484K, Convalescent-28, -0.77
+challenge Wuhan-E484K, Convalescent-33, -0.93
+
+challenge B.1.1.7-E484K, Convalescent-02, -1.84
+challenge B.1.1.7-E484K, Convalescent-03, -0.69
+challenge B.1.1.7-E484K, Convalescent-05, -1.44
+challenge B.1.1.7-E484K, Convalescent-06, 0.11
+challenge B.1.1.7-E484K, Convalescent-17, -1.92
+challenge B.1.1.7-E484K, Convalescent-22, -0.55
+challenge B.1.1.7-E484K, Convalescent-24, -0.99
+challenge B.1.1.7-E484K, Convalescent-27, -0.81
+challenge B.1.1.7-E484K, Convalescent-28, -0.77
+challenge B.1.1.7-E484K, Convalescent-33, -0.93
+
+challenge B.1.351-N501Y, Convalescent-02, -0.60
+challenge B.1.351-N501Y, Convalescent-03, -0.30
+challenge B.1.351-N501Y, Convalescent-05, -0.39
+challenge B.1.351-N501Y, Convalescent-06, 0.07
+challenge B.1.351-N501Y, Convalescent-17, 0.13
+challenge B.1.351-N501Y, Convalescent-22, 0.00
+challenge B.1.351-N501Y, Convalescent-24, -0.31
+challenge B.1.351-N501Y, Convalescent-27, 0.09
+challenge B.1.351-N501Y, Convalescent-28, 0.02
+challenge B.1.351-N501Y, Convalescent-33, -0.25
+
+challenge P.1-N501Y, Convalescent-02, 0.23
+challenge P.1-N501Y, Convalescent-03, 0.34
+challenge P.1-N501Y, Convalescent-05, 0.33
+challenge P.1-N501Y, Convalescent-06, 0.43
+challenge P.1-N501Y, Convalescent-17, 0.03
+challenge P.1-N501Y, Convalescent-22, 0.05
+challenge P.1-N501Y, Convalescent-24, -0.08
+challenge P.1-N501Y, Convalescent-27, 0.30
+challenge P.1-N501Y, Convalescent-28, 0.03
+challenge P.1-N501Y, Convalescent-33, -0.01
+
+challenge B.1.351-E484K, Convalescent-02, -1.20
+challenge B.1.351-E484K, Convalescent-03, -0.52
+challenge B.1.351-E484K, Convalescent-05, -0.61
+challenge B.1.351-E484K, Convalescent-06, -0.34
+challenge B.1.351-E484K, Convalescent-17, -1.03
+challenge B.1.351-E484K, Convalescent-22, -0.21
+challenge B.1.351-E484K, Convalescent-24, -0.86
+challenge B.1.351-E484K, Convalescent-27, -0.62
+challenge B.1.351-E484K, Convalescent-28, -0.45
+challenge B.1.351-E484K, Convalescent-33, -0.66
+
+challenge P.1-E484K, Convalescent-02, -0.96
+challenge P.1-E484K, Convalescent-03, -0.18
+challenge P.1-E484K, Convalescent-05, -0.17
+challenge P.1-E484K, Convalescent-06, 0.01
+challenge P.1-E484K, Convalescent-17, -0.49
+challenge P.1-E484K, Convalescent-22, 0.11
+challenge P.1-E484K, Convalescent-24, -0.24
+challenge P.1-E484K, Convalescent-27, -0.27
+challenge P.1-E484K, Convalescent-28, -0.39
+challenge P.1-E484K, Convalescent-33, -0.07
+
+challenge B.1.1.7NTD-E484K, Convalescent-02, -0.88
+challenge B.1.1.7NTD-E484K, Convalescent-03, -0.72
+challenge B.1.1.7NTD-E484K, Convalescent-05, -0.61
+challenge B.1.1.7NTD-E484K, Convalescent-06, -0.35
+challenge B.1.1.7NTD-E484K, Convalescent-17, -0.82
+challenge B.1.1.7NTD-E484K, Convalescent-22, -0.05
+challenge B.1.1.7NTD-E484K, Convalescent-24, -0.48
+challenge B.1.1.7NTD-E484K, Convalescent-27, -0.42
+challenge B.1.1.7NTD-E484K, Convalescent-28, -0.46
+challenge B.1.1.7NTD-E484K, Convalescent-33, -0.36
+
+challenge B.1.1.7NTD-N501Y, Convalescent-02, 0.39
+challenge B.1.1.7NTD-N501Y, Convalescent-03, 0.51
+challenge B.1.1.7NTD-N501Y, Convalescent-05, 0.78
+challenge B.1.1.7NTD-N501Y, Convalescent-06, 0.51
+challenge B.1.1.7NTD-N501Y, Convalescent-17, 0.43
+challenge B.1.1.7NTD-N501Y, Convalescent-22, 0.49
+challenge B.1.1.7NTD-N501Y, Convalescent-24, 0.05
+challenge B.1.1.7NTD-N501Y, Convalescent-27, 0.33
+challenge B.1.1.7NTD-N501Y, Convalescent-28, -0.05
+challenge B.1.1.7NTD-N501Y, Convalescent-33, 0.10
+
+challenge B.1.351NTD-E484K, Convalescent-02, -0.53
+challenge B.1.351NTD-E484K, Convalescent-03, -0.05
+challenge B.1.351NTD-E484K, Convalescent-05, 0.18
+challenge B.1.351NTD-E484K, Convalescent-06, -0.07
+challenge B.1.351NTD-E484K, Convalescent-17, -0.06
+challenge B.1.351NTD-E484K, Convalescent-22, 0.33
+challenge B.1.351NTD-E484K, Convalescent-24, -0.07
+challenge B.1.351NTD-E484K, Convalescent-27, -0.22
+challenge B.1.351NTD-E484K, Convalescent-28, 0.29
+challenge B.1.351NTD-E484K, Convalescent-33, -0.06
+

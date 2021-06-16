@@ -1,0 +1,125 @@
+Strain NG=D614G,K417N
+Strain KYG=D614G,E484K,N501Y
+Strain KYNG=D614G,E484K,N501Y,K417N
+
+Serum Chen-01 = D614G
+Serum Chen-02 = D614G
+Serum Chen-03 = D614G
+Serum Chen-04 = D614G
+Serum Chen-05 = D614G
+Serum Chen-06 = D614G
+Serum Chen-07 = D614G
+Serum Chen-08 = D614G
+Serum Chen-09 = D614G
+Serum Chen-10 = D614G
+Serum Chen-11 = D614G
+Serum Chen-12 = D614G
+Serum Chen-13 = D614G
+Serum Chen-14 = D614G
+Serum Chen-15 = D614G
+Serum Chen-16 = D614G
+Serum Chen-17 = D614G
+Serum Chen-18 = D614G
+Serum Chen-19 = D614G
+
+challenge B.1.1.7, Chen-01, 0.43, free 
+challenge B.1.1.7, Chen-02, 0.38, free
+challenge B.1.1.7, Chen-03, 0.24, free
+challenge B.1.1.7, Chen-04, 0.37, free
+challenge B.1.1.7, Chen-05, 0.27, free
+challenge B.1.1.7, Chen-06, 0.88, free
+challenge B.1.1.7, Chen-07, 0.51, free
+challenge B.1.1.7, Chen-08, 0.20, free
+challenge B.1.1.7, Chen-09, -0.10, free
+challenge B.1.1.7, Chen-10, -0.70, free
+challenge B.1.1.7, Chen-11, -0.14, free
+challenge B.1.1.7, Chen-12, 0.01, free
+challenge B.1.1.7, Chen-13, 0.02, free
+challenge B.1.1.7, Chen-14, 0.32, free
+challenge B.1.1.7, Chen-15, 0.03, free
+challenge B.1.1.7, Chen-16, 0.44, free
+challenge B.1.1.7, Chen-17, 0.55, free
+challenge B.1.1.7, Chen-18, -0.74, free
+challenge B.1.1.7, Chen-19, -0.52, free
+
+challenge NG, Chen-01, 0.14, free
+challenge NG, Chen-02, -0.27, free
+challenge NG, Chen-03, -0.02, free
+challenge NG, Chen-04, -0.09, free
+challenge NG, Chen-05, -0.23, free
+challenge NG, Chen-06, 0.27, free
+challenge NG, Chen-07, 0.19, free
+challenge NG, Chen-08, -0.13, free
+challenge NG, Chen-09, -0.41, free
+challenge NG, Chen-10, -0.33, free
+challenge NG, Chen-11, -0.24, free
+challenge NG, Chen-12, -0.17, free
+challenge NG, Chen-13, -0.31, free
+challenge NG, Chen-14, -0.11, free
+challenge NG, Chen-15, 0.32, free
+challenge NG, Chen-16, -0.29, free
+challenge NG, Chen-17, -0.08, free
+challenge NG, Chen-18, -0.74, free
+challenge NG, Chen-19, -0.76, free
+
+challenge KYG, Chen-01, -0.21, free
+challenge KYG, Chen-02, -0.94, free
+challenge KYG, Chen-03, -0.42, free
+challenge KYG, Chen-04, -0.83, free
+challenge KYG, Chen-05, -0.82, free
+challenge KYG, Chen-06, -0.32, free
+challenge KYG, Chen-07, -0.34, free
+challenge KYG, Chen-08, -0.28, free
+challenge KYG, Chen-09, -0.76, free
+challenge KYG, Chen-10, -0.96, free
+challenge KYG, Chen-11, -1.45, free
+challenge KYG, Chen-12, -1.05, free
+challenge KYG, Chen-13, -1.19, free
+challenge KYG, Chen-14, -0.28, free
+challenge KYG, Chen-15, -0.75, free
+challenge KYG, Chen-16, -0.53, free
+challenge KYG, Chen-17, -0.81, free
+challenge KYG, Chen-18, -0.74, free
+challenge KYG, Chen-19, -0.78, free
+
+challenge KYNG, Chen-01, -0.29, free
+challenge KYNG, Chen-02, -0.62, free
+challenge KYNG, Chen-03, -0.12, free
+challenge KYNG, Chen-04, -0.46, free
+challenge KYNG, Chen-05, -0.33, free
+challenge KYNG, Chen-06, -0.31, free
+challenge KYNG, Chen-07, -0.15, free
+challenge KYNG, Chen-08, -0.41, free
+challenge KYNG, Chen-09, -0.76, free
+challenge KYNG, Chen-10, -0.96, free
+challenge KYNG, Chen-11, -1.54, free
+challenge KYNG, Chen-12, -0.88, free
+challenge KYNG, Chen-13, -1.14, free
+challenge KYNG, Chen-14, -0.07, free
+challenge KYNG, Chen-15, -0.46, free
+challenge KYNG, Chen-16, -0.42, free
+challenge KYNG, Chen-17, -0.21, free
+challenge KYNG, Chen-18, -0.38, free
+challenge KYNG, Chen-19, -0.78, free
+
+challenge B.1.351, Chen-01, -0.34, free
+challenge B.1.351, Chen-02, -0.76, free
+challenge B.1.351, Chen-03, -0.47, free
+challenge B.1.351, Chen-04, -0.82, free
+challenge B.1.351, Chen-05, -0.65, free
+challenge B.1.351, Chen-06, -0.38, free
+challenge B.1.351, Chen-07, -0.34, free
+challenge B.1.351, Chen-08, -0.43, free
+challenge B.1.351, Chen-09, -0.76, free
+challenge B.1.351, Chen-10, -0.77, free
+challenge B.1.351, Chen-11, -1.82, free
+challenge B.1.351, Chen-12, -1.05, free
+challenge B.1.351, Chen-13, -1.19, free
+challenge B.1.351, Chen-14, -0.28, free
+challenge B.1.351, Chen-15, -0.44, free
+challenge B.1.351, Chen-16, -0.46, free
+challenge B.1.351, Chen-17, -0.52, free
+challenge B.1.351, Chen-18, -0.46, free
+challenge B.1.351, Chen-19, -0.64, free
+
+
