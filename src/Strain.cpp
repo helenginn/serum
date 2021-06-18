@@ -19,98 +19,59 @@
 #include <hcsrc/FileReader.h>
 #include "Strain.h"
 #include "Loader.h"
+#include "Mutation.h"
 #include <iomanip>
 
 Strain::Strain(std::string name)
 {
+	_refresh = true;
 	_name = name;
 }
 
-void Strain::setList(std::string list)
+void Strain::setList(std::string list, std::vector<Mutation *> &unique)
 {
-	_list = split(list, ',');
+	_list.clear();
 
-	for (size_t i = 0; i < _list.size(); i++)
+	std::vector<std::string> contents = split(list, ',');
+
+	for (size_t i = 0; i < contents.size(); i++)
 	{
-		trim(_list[i]);
-	}
-
-	std::sort(_list.begin(), _list.end(), std::greater<std::string>());
-}
-
-bool Strain::hasCooperative(Strain *a, Strain *b, std::string coop)
-{
-	if (a == NULL || b == NULL || coop.find('+') == std::string::npos)
-	{
-		return false;
-	}
-
-	std::vector<std::string> each = split(coop, '+');
-	
-	if (each.size() != 2)
-	{
-		return false;
-	}
-
-	std::vector<std::string>::iterator it_a0, it_a1, it_b0, it_b1;
-
-	it_a0 = std::find(a->_list.begin(), a->_list.end(), each[0]);
-	it_b0 = std::find(b->_list.begin(), b->_list.end(), each[0]);
-	it_a1 = std::find(a->_list.begin(), a->_list.end(), each[1]);
-	it_b1 = std::find(b->_list.begin(), b->_list.end(), each[1]);
-
-	if (it_a0 != a->_list.end() && it_a1 != a->_list.end())
-	{
-		return false;
-	}
-	else if (it_b0 != b->_list.end() && it_b1 != b->_list.end())
-	{
-		return false;
-	}
-	else if ((it_a0 != a->_list.end() && it_b1 != b->_list.end()) ||
-	    (it_a1 != a->_list.end() && it_b0 != b->_list.end()))
-	{
-		return true;
-	}
-	
-	return false;
-}
-
-void Strain::addToMuts(std::vector<std::string> &unique)
-{
-	std::cout << "Strain " << _name << " with " << std::flush;
-	std::vector<std::string>::iterator it;
-
-	for (size_t i = 0; i < _list.size(); i++)
-	{
-		std::cout << _list[i] << " " << std::flush;
-		it = std::find(unique.begin(), unique.end(), _list[i]);
-
-		if (it == unique.end())
+		trim(contents[i]);
+		
+		Mutation *m = NULL;
+		
+		for (size_t j = 0; j < unique.size(); j++)
 		{
-			unique.push_back(_list[i]);
+			if (unique[j]->str() == contents[i])
+			{
+				m = unique[j];
+			}
 		}
+		
+		if (m == NULL)
+		{
+			m = new Mutation(contents[i], _loader->dimensions());
+			unique.push_back(m);
+		}
+
+		m->addStrain(this);
+		_list.push_back(m);
 	}
 
-	if (_list.size() == 0)
-	{
-		std::cout << "[N/A]";
-	}
-
-	std::cout << std::endl;
+	std::sort(_list.begin(), _list.end(), std::greater<Mutation *>());
 }
 
-bool Strain::hasMutation(std::string mut)
+bool Strain::hasMutation(Mutation *mut)
 {
 	return (std::find(_list.begin(), _list.end(), mut) != _list.end());
 }
 
-std::vector<double> Strain::generateVector(std::vector<std::string> &full)
+std::vector<double> Strain::generateVector(std::vector<Mutation *> &full)
 {
 	std::vector<double> vec = std::vector<double>(full.size(), 0);
 	std::cout << std::setw(20) << _name << ": ";
 
-	std::vector<std::string>::iterator it;
+	std::vector<Mutation *>::iterator it;
 	for (size_t i = 0; i < full.size(); i++)
 	{
 		it = std::find(_list.begin(), _list.end(), full[i]);
@@ -129,98 +90,38 @@ std::vector<double> Strain::generateVector(std::vector<std::string> &full)
 	return vec;
 }
 
-std::vector<std::string> Strain::combinedLists(Strain *other)
+void Strain::staticFindPosition(void *object)
 {
-	std::vector<std::string> all = _list;
-	all.reserve(_list.size() + other->_list.size());
-	all.insert(all.end(), other->_list.begin(), other->_list.end());
-
-	return all;
+	static_cast<Strain *>(object)->needsRefresh();
 }
 
-std::vector<double> Strain::scaleVector(std::vector<double> &scales,
-                                        std::vector<std::string> &muts,
-                                        Strain *other)
+void Strain::findPosition()
 {
-	std::vector<double> results;
-	
-	if (_strainVecs.count(other) == 0)
+	if (_refresh == false)
 	{
-		for (size_t i = 0; i < _vec.size(); i++)
-		{
-			double c = _vec[i];
-
-			if (c <= 0 && hasCooperative(this, other, muts[i]))
-			{
-				c = 1;
-			}
-
-			results.push_back(c);
-		}
-
-		_strainVecs[other] = results;
-	}
-	else
-	{
-		results = _strainVecs[other];
+		return;
 	}
 
-	for (size_t i = 0; i < scales.size(); i++)
-	{
-		results[i] *= scales[i];
-	}
-
-	return results;
-}
-
-double Strain::compareToStrain(Strain *str, std::vector<double> &scales,
-                                std::vector<std::string> &muts)
-{
-	std::vector<double> mine = scaleVector(scales, muts, str);
-	std::vector<double> other = str->scaleVector(scales, muts, str);
-
-	double sum = 0;
-	for (size_t i = 0; i < scales.size(); i++)
-	{
-		bool pos = scales[i] > 0;
-		double mult = (mine[i] - other[i]);
-		mult *= mult;
-		if (!pos)
-		{
-			mult *= -1;
-		}
-		sum += mult;
-	}
-	
-	return sum;
-}
-
-void Strain::findPosition(std::vector<std::vector<double> > &scales)
-{
-	if (scales.size() == 0) return;
-	std::vector<double> me = mutVector();
-	
-	int dim = scales[0].size();
+	int dim = _loader->dimensions();
 	_dir = std::vector<double>(dim, 0);
 	
-	for (size_t i = 0; i < scales.size(); i++)
+	for (size_t i = 0; i < _list.size(); i++)
 	{
-		std::vector<double> mymut = scales[i];
-
 		for (size_t j = 0; j < dim; j++)
 		{
-			_dir[j] += mymut[j] * me[i];
+			_dir[j] += _list[i]->scalar(j);
 		}
 	}
+	
+	_refresh = false;
 }
 
-double Strain::vectorCompare(Strain *str, 
-                           std::vector<std::vector<double> > &scales)
+double Strain::vectorCompare(Strain *str) 
 {
 	if (str == this)
 	{
 		return 0;
 	}
 	
-	return Loader::resultForVector(_dir, str->_dir);
+	return Loader::resultForVector(&_dir[0], &str->_dir[0]);
 }

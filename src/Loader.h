@@ -25,6 +25,7 @@
 #include <map>
 #include <QObject>
 
+class Mutation;
 class Strain;
 class Serum;
 class Any;
@@ -46,7 +47,6 @@ public:
 	void reorderMutations();
 	void updateSums();
 	void setModelToAverage();
-	void removeUnused();
 	void writeResultVectors(std::string filename);
 	void populateNames(char ****ptr);
 	
@@ -54,6 +54,11 @@ public:
 	{
 		_dim = dim;
 		if (_dim <= 0) _dim = 1;
+	}
+	
+	int dimensions()
+	{
+		return _dim;
 	}
 	
 	void setRefineOffset(bool refine)
@@ -82,21 +87,9 @@ public:
 	{
 		return _sera.size();
 	}
-	
-	typedef enum 
-	{
-		ModelSimple,
-		ModelVector
-	} ModelType;
 
-	static double resultForDirection(std::vector<double> dir);
-	static double resultForVector(std::vector<double> dir1, 
-	                              std::vector<double> dir2);
-	
-	void setModelType(ModelType type)
-	{
-		_type = type;
-	}
+	static double resultForDirection(double *dir);
+	static double resultForVector(double *dir1, double *dir2);
 signals:
 	void resultReady();
 	void update();
@@ -109,7 +102,6 @@ private:
 	void degenerateSummary();
 	void prepareVectors();
 	void addResult();
-	void enablePairs(std::string line);
 	double modelForPair(Strain *strain, Serum *serum);
 	double vectorModelForPair(Strain *strain, Serum *serum);
 	double score();
@@ -126,23 +118,23 @@ private:
 	}
 
 	std::string _results;
-	std::vector<double> _reals;
 	std::vector<double> _sums, _sumsqs;
-	std::vector<std::vector<double> > _scales, _sumScales, _sumScaleSqs;
 	std::string _filename;
+
 	std::vector<Strain *> _strains;
 	std::vector<Serum *> _sera;
+	std::vector<Mutation *> _muts;
+
 	std::map<std::string, Strain *> _name2Strain;
 	std::map<std::string, Serum *> _name2Serum;
-	std::map<Strain *, std::map<Serum *, double> > _strainMap;
-	std::map<Strain *, std::map<Serum *, bool> > _freeMap;
-	std::vector<std::string> _muts;
+
 	std::vector<Any *> _anys;
+
 	int _count;
-	ModelType _type;
 	bool _refineOffset;
 	bool _refineStrength;
 	double _scale;
+	static double *_scratch;
 	static int _dim;
 };
 

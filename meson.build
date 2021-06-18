@@ -34,6 +34,7 @@ moc_files = qt5.preprocess(moc_headers : [
 
 executable('something', gen_src, moc_files,
 'src/Loader.cpp', 
+'src/Mutation.cpp', 
 'src/MyDictator.cpp', 
 'src/SerumView.cpp', 
 'src/Strain.cpp', 

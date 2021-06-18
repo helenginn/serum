@@ -86,11 +86,6 @@ void SerumView::loadDefinitions(std::string filename)
 	updateView();
 }
 
-void SerumView::removeUnused()
-{
-	_loader->removeUnused();
-}
-
 void SerumView::resultVectors(std::string filename)
 {
 	_loader->writeResultVectors(filename);
@@ -108,7 +103,7 @@ void SerumView::refine()
 
 	connect(_loader, SIGNAL(resultReady()), this, SLOT(handleResult()));
 
-	_loader->refineLoop(16);
+	_loader->refineLoop(25);
 }
 
 void SerumView::mousePressEvent(QMouseEvent *e)
@@ -144,7 +139,7 @@ void SerumView::updateView()
 	double w = _loader->serumCount();
 	double h = _loader->strainCount();
 
-	MatrixView *mv = new MatrixView(NULL, w * 7, h * 7);
+	MatrixView *mv = new MatrixView(NULL, w * 5, h * 5);
 	mv->populate(w, h, raw);
 	_dataLabel->setPixmap(QPixmap::fromImage(*mv));
 
@@ -219,7 +214,7 @@ void SerumView::run()
 
 	for (size_t i = 0; i < 30; i++)
 	{
-		_loader->refineLoop(10);
+		_loader->refineLoop(25);
 		if (i % 3 == 0)
 		{
 			_loader->writeResultVectors("vectors.csv");

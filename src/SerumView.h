@@ -38,7 +38,6 @@ public:
 	void setCommandLineArgs(int argc, char *argv[]);
 	void loadDefinitions(std::string filename);
 	void refine();
-	void removeUnused();
 	void resultVectors(std::string filename);
 	void writeOut(std::string filename, int type);
 	void antigenicity(std::string filename);

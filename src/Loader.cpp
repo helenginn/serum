@@ -18,6 +18,7 @@
 
 #include "Loader.h"
 #include "Strain.h"
+#include "Mutation.h"
 #include "Serum.h"
 #include <fstream>
 #include <algorithm>
@@ -28,10 +29,10 @@
 #include <libsrc/shared_ptrs.h>
 
 int Loader::_dim = 2;
+double *Loader::_scratch = NULL;
 
 Loader::Loader()
 {
-	_type = ModelVector;
 	_refineOffset = false;
 	_refineStrength = false;
 	_count = 0;
@@ -72,12 +73,6 @@ void Loader::load(std::string filename)
 			line.erase(0, strlen("challenge "));
 			defineChallenge(line);
 		}
-
-		if (line.rfind("cooperative ", 0) == 0)
-		{
-			line.erase(0, strlen("cooperative "));
-			enablePairs(line);
-		}
 	}
 	
 	reorderMutations();
@@ -87,6 +82,8 @@ void Loader::load(std::string filename)
 	prepareVectors();
 	degenerateSummary();
 	prepare();
+	
+	gradientRefresh(this);
 	score();
 }
 
@@ -95,47 +92,14 @@ void Loader::fillInZeros()
 	for (size_t i = 0; i < _sera.size(); i++)
 	{
 		Strain *strain = _sera[i]->strain();
-		_strainMap[strain][_sera[i]] = 0;
-		_freeMap[strain][_sera[i]] = 0;
-	}
-}
-
-void Loader::removeUnused()
-{
-	for (size_t i = 0; i < _muts.size(); i++)
-	{
-		bool found = false;
-
-		if (_muts[i].find('+') == std::string::npos)
+		
+		if (strain->hasSerum(_sera[i]))
 		{
 			continue;
 		}
 		
-		for (size_t k = 0; k < _sera.size() && !found; k++)
-		{
-			for (size_t j = 0; j < _strains.size(); j++)
-			{
-				std::vector<std::string> all;
-				Strain *a = _sera[k]->strain();
-				Strain *b = _strains[j];
-
-				if (Strain::hasCooperative(a, b, _muts[i]))
-				{
-					found = true;
-					break;
-				}
-			}
-		}
-
-		if (!found)
-		{
-			_muts.erase(_muts.begin() + i);
-			i--;
-		}
+		strain->addSerum(_sera[i], 0, false);
 	}
-	
-	prepareVectors();
-	degenerateSummary();
 }
 
 void Loader::prepareVectors()
@@ -155,7 +119,7 @@ void Loader::prepareVectors()
 
 	for (size_t i = 0; i < _muts.size(); i++)
 	{
-		std::cout << _muts[i] << " " << std::flush;
+		std::cout << _muts[i]->str() << " " << std::flush;
 	}
 
 	std::cout << std::endl;
@@ -164,24 +128,18 @@ void Loader::prepareVectors()
 	
 	for (size_t i = 0; i < _strains.size(); i++)
 	{
-		for (size_t j = 0; j < _sera.size(); j++)
-		{
-			if (_strainMap.count(_strains[i]) &&
-			    _strainMap[_strains[i]].count(_sera[j]))
-			{
-				count++;
-			}
-		}
+		count += serumCount();
 	}
+
 	std::cout << "Total number of observations: " << count << std::endl;
 }
 
 void Loader::degenerateSummary()
 {
-	std::map<std::string, std::vector<std::string>> map;
+	std::map<std::string, std::vector<Mutation *>> map;
 	for (size_t i = 0; i < _muts.size(); i++)
 	{
-		std::string m = _muts[i];
+		Mutation *m = _muts[i];
 		std::string v;
 		
 		for (size_t j = 0; j < _strains.size(); j++)
@@ -193,17 +151,17 @@ void Loader::degenerateSummary()
 		map[v].push_back(m);
 	}
 	
-	std::map<std::string, std::vector<std::string>>::iterator it;
+	std::map<std::string, std::vector<Mutation *>>::iterator it;
 
 	std::cout << std::endl;
 	std::cout << "Mutations grouped by degeneracy:" << std::endl;
 	for (it = map.begin(); it != map.end(); it++)
 	{
-		std::vector<std::string> v = it->second;
+		std::vector<Mutation *> v = it->second;
 		
 		for (size_t j = 0; j < v.size(); j++)
 		{
-			std::cout << v[j] << ", ";
+			std::cout << v[j]->str() << ", ";
 		}
 
 		std::cout << std::endl;
@@ -214,22 +172,12 @@ void Loader::degenerateSummary()
 
 typedef struct
 {
-	std::string str;
+	Mutation *mut;
 	int res;
 } StrRes;
 
 bool higher_seq(StrRes &a, StrRes &b)
 {
-	if (a.str.find('+') != std::string::npos && 
-	    b.str.find('+') == std::string::npos)
-	{
-		return false;
-	}
-	if (b.str.find('+') != std::string::npos && 
-	    a.str.find('+') == std::string::npos)
-	{
-		return true;
-	}
 	return (a.res < b.res);
 }
 
@@ -239,8 +187,9 @@ void Loader::reorderMutations()
 	for (size_t i = 0; i < _muts.size(); i++)
 	{
 		StrRes res;
-		res.str = _muts[i];
-		char *old = &_muts[i][0];
+		res.mut = _muts[i];
+		std::string mut = _muts[i]->str();
+		char *old = &mut[0];
 		char *pos = old;
 		int val = 0;
 		
@@ -259,7 +208,7 @@ void Loader::reorderMutations()
 	
 	for (size_t i = 0; i < _muts.size(); i++)
 	{
-		_muts[i] = residues[i].str;
+		_muts[i] = residues[i].mut;
 	}
 }
 
@@ -318,12 +267,11 @@ void Loader::defineStrain(std::string str)
 	}
 
 	Strain *strain = new Strain(equation[0]);
-	strain->setList(equation[1]);
+	strain->setLoader(this);
+	strain->setList(equation[1], _muts);
 
 	_strains.push_back(strain);
 	_name2Strain[strain->name()] = strain;
-
-	strain->addToMuts(_muts);
 }
 
 void Loader::defineChallenge(std::string str)
@@ -357,30 +305,27 @@ void Loader::defineChallenge(std::string str)
 	double val = atof(challenges[2].c_str());
 	
 	val /= _scale;
+	bool free = false;
 
-	_strainMap[one][two] = val;
-	_freeMap[one][two] = false;
-	
 	if (challenges.size() >= 4)
 	{
 		std::string ch = challenges[3];
 		trim(ch);
 		if (ch == "free")
 		{
-			_freeMap[one][two] = true;
-//			std::cout << "(free) ";
+			free = true;
 		}
 	}
 
-//	std::cout << one->name() << " strain [v] " << two->name() << 
-//	" serum -> " << val << std::endl;
+	one->addSerum(two, val, free);
 }
 
 void Loader::refineLoop(int count)
 {
 	std::cout << "*** REFINE ***" << std::endl;
 	srand(time(NULL));
-	_reals.clear();
+
+	prepare();
 
 	for (size_t i = 0; i < count; i++)
 	{
@@ -400,7 +345,7 @@ void Loader::addResult()
 	add += "result_" + f_to_str(score(), 3) + "_";
 	add += i_to_str(_count) + ",";
 	
-	for (size_t i = 0; i < _reals.size(); i++)
+	for (size_t i = 0; i < _muts.size(); i++)
 	{
 		double result = resultForResidue(i);
 		add += f_to_str(result, 3) + ",";
@@ -419,7 +364,7 @@ void Loader::writeResultVectors(std::string filename)
 	file << "result_num,";
 	for (size_t i = 0; i < _muts.size(); i++)
 	{
-		file << _muts[i] << ",";
+		file << _muts[i]->str() << ",";
 	}
 	file << std::endl;
 	
@@ -429,41 +374,24 @@ void Loader::writeResultVectors(std::string filename)
 
 void Loader::prepare()
 {
-	if (_reals.size() == 0 || _reals.size() != _muts.size())
+	for (size_t i = 0; i < _muts.size(); i++)
 	{
-		_reals = std::vector<double>(_muts.size(), 0.2);
-		_scales = std::vector<std::vector<double> >(_muts.size(), 
-		                                            std::vector<double>(_dim, 0));
-
-		for (size_t i = 0; i < _reals.size(); i++)
-		{
-			_reals[i] = ((rand() / (double)RAND_MAX) - 0.5) / 4;
-
-			for (size_t j = 0; j < _dim; j++)
-			{
-				_scales[i][j] = ((rand() / (double)RAND_MAX) - 0.5) / 4;
-				if (j >= 2)
-				{
-					_scales[i][j] /= 10;
-				}
-			}
-		}
-		
-		for (size_t i = 0; i < _sera.size(); i++)
-		{
-			(*_sera[i]->strengthPtr()) = 1;
-			(*_sera[i]->offsetPtr()) = 0;
-		}
+		_muts[i]->randomiseVector();
 	}
+
+	for (size_t i = 0; i < _sera.size(); i++)
+	{
+		(*_sera[i]->strengthPtr()) = 1;
+		(*_sera[i]->offsetPtr()) = 0;
+	}
+
+	std::cout << "Starting score: " << score() << std::endl;
 }
 
 void Loader::refine()
 {
-	prepare();
-
-	double s = score();
+	score();
 	RefinementLBFGSPtr n = RefinementLBFGSPtr(new RefinementLBFGS());
-	n->setGradientRefresh(this, gradientRefresh);
 	n->setCycles(1000);
 	
 	for (size_t i = 0; i < _anys.size(); i++)
@@ -472,34 +400,21 @@ void Loader::refine()
 	}
 	_anys.clear();
 
-	for (size_t i = 0; i < _reals.size(); i++)
+	for (size_t i = 0; i < _muts.size(); i++)
 	{
-		if (_type == ModelSimple)
+		for (size_t j = 0; j < _dim; j++)
 		{
-			Any *any_real = new Any(&_reals[i]);
+			Any *any_real = new Any(_muts[i]->scalarPtr(j));
 			_anys.push_back(any_real);
+			any_real->setRefresh(Mutation::refresh, _muts[i]);
 
-			std::string mut = _muts[i];
+			std::string mut = _muts[i]->str();
 
-			n->addParameter(any_real, Any::get, Any::set, 0.2, 0.02, mut + "_r");
+			n->addParameter(any_real, Any::get, Any::set, 0.2, 0.02, 
+			                mut + "_" + i_to_str(j));
 		}
-
-		if (_type == ModelVector)
-		{
-			for (size_t j = 0; j < _dim; j++)
-			{
-				Any *any_real = new Any(&_scales[i][j]);
-				_anys.push_back(any_real);
-
-				std::string mut = _muts[i];
-
-				n->addParameter(any_real, Any::get, Any::set, 0.2, 0.02, 
-				                mut + "_" + i_to_str(j));
-			}
-		}
-
 	}
-	
+
 	for (size_t i = 0; i < _sera.size(); i++)
 	{
 		std::string name = _sera[i]->name();
@@ -509,6 +424,7 @@ void Loader::refine()
 			double *strength = _sera[i]->strengthPtr();
 			Any *any = new Any(strength);
 			_anys.push_back(any);
+			any->setRefresh(Strain::staticFindPosition, _sera[i]->strain());
 
 			n->addParameter(any, Any::get, Any::set, 0.5, 0.05, name + "_s");
 		}
@@ -518,6 +434,7 @@ void Loader::refine()
 			double *offset = _sera[i]->offsetPtr();
 			Any *any = new Any(offset);
 			_anys.push_back(any);
+			any->setRefresh(Strain::staticFindPosition, _sera[i]->strain());
 
 			n->addParameter(any, Any::get, Any::set, 0.2, 0.02, name + "_o");
 		}
@@ -530,11 +447,8 @@ void Loader::refine()
 	n->refine();
 	
 	double target = simpleScore(0.0);
-	double both = score();
 	std::cout << "Parameters: " << n->parameterCount() <<
-	"\tData/model: " << target
-	<< "\trestraints alone: " << both - target
-	<< "\tboth: " << both << std::endl;
+	"\tData/model: " << target << std::endl;
 }
 
 double Loader::modelForPair(Strain *strain, Serum *serum)
@@ -542,16 +456,7 @@ double Loader::modelForPair(Strain *strain, Serum *serum)
 	Strain *orig = serum->strain();
 	double strength = serum->strength() / 1;
 	double offset = serum->offset();
-	double result = 0;
-	
-	if (_type == ModelSimple)
-	{
-		result = strain->compareToStrain(orig, _reals, _muts);
-	}
-	else
-	{
-		result = strain->vectorCompare(orig, _scales);
-	}
+	double result = strain->vectorCompare(orig);
 
 	double val = -result * strength;
 	val -= offset;
@@ -568,31 +473,28 @@ double Loader::simpleScore(double weight)
 {
 	double diffs = 0;
 	double count = 0;
-	double restraints = 0;
 	
 	gradientRefresh(this);
 	
 	for (size_t i = 0; i < _strains.size(); i++)
 	{
 		Strain *challenge = _strains[i];
-		for (size_t j = 0; j < _sera.size(); j++)
+		for (size_t j = 0; j < challenge->serumCount(); j++)
 		{
-			Serum *serum = _sera[j];
+			Serum *serum = challenge->serum(j);
 			Strain *orig = serum->strain();
 			
 			if (challenge == orig)
 			{
-				continue;
+//				continue;
 			}
 			
-			if (!_strainMap.count(challenge) ||
-			    !_strainMap[challenge].count(serum)
-			    || _freeMap[challenge][serum])
+			if (challenge->freeSerum(serum))
 			{
 				continue;
 			}
 
-			double data = _strainMap[challenge][serum];
+			double data = challenge->serumValue(serum);
 			double val = modelForPair(challenge, serum);
 
 			double diff = (val - data) * (val - data);
@@ -601,26 +503,19 @@ double Loader::simpleScore(double weight)
 			count++;
 		}
 	}
-	
-	for (size_t i = 0; i < _muts.size(); i++)
-	{
-		restraints += restraintForResidue(i);
-	}
 
 	diffs /= count;
-	restraints /= count;
-	restraints = sqrt(restraints);
 
-	return diffs + restraints * weight;
+	return diffs;
 }
 
 double Loader::gradientRefresh(void *object)
 {
 	Loader *l = static_cast<Loader *>(object);
 
-	for (size_t i = 0; i < l->_strains.size() && l->_type == ModelVector; i++)
+	for (size_t i = 0; i < l->_strains.size(); i++)
 	{
-		l->_strains[i]->findPosition(l->_scales);
+		l->_strains[i]->findPosition();
 	}
 
 	return 0;
@@ -665,14 +560,13 @@ void Loader::populateRaw(double ***ptr, int type)
 		
 		for (size_t j = 0; j < _strains.size(); j++)
 		{
-			if (!_strainMap.count(_strains[j]) ||
-			    !_strainMap[_strains[j]].count(_sera[i]))
+			if (!_strains[j]->hasSerum(_sera[i]))
 			{
 				(*ptr)[i][j] = NAN;
 				continue;
 			}
 
-			double data = _strainMap[_strains[j]][_sera[i]];
+			double data = _strains[j]->serumValue(_sera[i]);
 
 			if (type == 0)
 			{
@@ -713,14 +607,13 @@ void Loader::writeOut(std::string filename, int type)
 		file << _sera[i]->name() << ",";
 		for (size_t j = 0; j < _strains.size(); j++)
 		{
-			if (!_strainMap.count(_strains[j]) ||
-			    !_strainMap[_strains[j]].count(_sera[i]))
+			if (!_strains[j]->hasSerum(_sera[i]))
 			{
 				file << "NAN,";
 				continue;
 			}
 
-			double data = _strainMap[_strains[j]][_sera[i]];
+			double data = _strains[j]->serumValue(_sera[i]);
 			double val = 0;
 
 			if (type == 0)
@@ -750,42 +643,22 @@ void Loader::writeOut(std::string filename, int type)
 	file.close();
 }
 
-void Loader::setModelToAverage()
+double Loader::resultForVector(double *dir1, double *dir2)
 {
-	for (size_t i = 0; i < _sums.size(); i++)
+	if (_scratch == NULL)
 	{
-		double sum = _sums[i];
-		double mean = sum / (double)_count;
-		_reals[i] = mean;
+		_scratch = new double[_dim];
 	}
-}
-
-double Loader::restraintForResidue(int i)
-{
-	double sum = 0;
-	for (size_t j = 0; j < _dim; j++)
-	{
-		double contrib = (_scales[i][j] * _scales[i][j]);
-		sum += contrib;
-	}
-	
-	return sum * sum;
-}
-
-double Loader::resultForVector(std::vector<double> dir1, 
-                               std::vector<double> dir2)
-{
-	std::vector<double> subtract;
 
 	for (size_t j = 0; j < _dim; j++)
 	{
-		subtract.push_back(dir1[j] - dir2[j]);
+		_scratch[j] = dir1[j] - dir2[j];
 	}
 
-	return resultForDirection(subtract);
+	return resultForDirection(&_scratch[0]);
 }
 
-double Loader::resultForDirection(std::vector<double> dir)
+double Loader::resultForDirection(double *dir)
 {
 	double sum = 0;
 	double pos = 0;
@@ -805,35 +678,26 @@ double Loader::resultForDirection(std::vector<double> dir)
 		}
 	}
 
-	return (pos - neg);
+	double sq = sqrt(pos) - sqrt(neg);
+	return sq;
 }
 
 double Loader::resultForResidue(int i)
 {
-	if (_type == ModelSimple)
-	{
-		return _reals[i];
-	}
-	
-	return resultForDirection(_scales[i]);
+	return resultForDirection(_muts[i]->scalarPtr(0));
 }
 
 void Loader::perResidueAntigenicity(std::string filename)
 {
-	if (_type == ModelSimple)
-	{
-		return;
-	}
-
 	std::ofstream file;
 	file.open(filename);
 	file << "mutation, x, y, z" << std::endl;
-	for (size_t i = 0; i < _scales.size(); i++)
+	for (size_t i = 0; i < _muts.size(); i++)
 	{
-		file << _muts[i] << ", ";
+		file << _muts[i]->str() << ", ";
 		for (size_t j = 0; j < _dim; j++)
 		{
-			file << _scales[i][j] << ", ";
+			file << _muts[i]->scalar(j) << ", ";
 		}
 		file << std::endl;
 	}
@@ -845,9 +709,10 @@ void Loader::perResidueAntigenicity(std::string filename)
 	{
 		for (size_t j = 0; j < _muts.size(); j++)
 		{
-			double result = resultForVector(_scales[i], _scales[j]);
+			double result = resultForVector(_muts[i]->scalarPtr(i),
+			                                _muts[j]->scalarPtr(j));
 
-			file << _muts[i] << "," << _muts[j] << "," << result << std::endl;
+			file << _muts[i]->str() << "," << _muts[j]->str() << "," << result << std::endl;
 		}
 	}
 
@@ -858,7 +723,7 @@ void Loader::perResidueAntigenicity(std::string filename)
 
 	for (size_t i = 0; i < _strains.size(); i++)
 	{
-		_strains[i]->findPosition(_scales);
+		_strains[i]->findPosition();
 		std::vector<double> dir = _strains[i]->direction();
 		
 		file << _strains[i]->name() << ", ";
@@ -875,11 +740,11 @@ void Loader::perResidueAntigenicity(std::string filename)
 
 	for (size_t i = 0; i < _strains.size(); i++)
 	{
-		_strains[i]->findPosition(_scales);
+		_strains[i]->findPosition();
 		for (size_t j = 0; j < _strains.size(); j++)
 		{
-			_strains[j]->findPosition(_scales);
-			double result = _strains[i]->vectorCompare(_strains[j], _scales);
+			_strains[j]->findPosition();
+			double result = _strains[i]->vectorCompare(_strains[j]);
 			if (result < 0) result = 0;
 
 			file << _strains[i]->name() << "," << _strains[j]->name() << ",";
@@ -896,7 +761,7 @@ void Loader::antigenicity(std::string filename)
 	file.open(filename);
 	file << "mutation,antigenicity,+-" << std::endl;
 
-	for (size_t i = 0; i < _sums.size(); i++)
+	for (size_t i = 0; i < _muts.size(); i++)
 	{
 		double sum = _sums[i];
 		double mean = sum / (double)_count;
@@ -912,7 +777,7 @@ void Loader::antigenicity(std::string filename)
 			stdev = 0;
 		}
 
-		file << _muts[i] << "," << mean << "," << stdev << std::endl;
+		file << _muts[i]->str() << "," << mean << "," << stdev << std::endl;
 	}
 }
 
@@ -922,54 +787,15 @@ void Loader::updateSums()
 
 	if (_sums.size() == 0)
 	{
-		_sums = std::vector<double>(_reals.size(), 0);
-		_sumScales = std::vector<std::vector<double>>(_reals.size(), 
-		                                              std::vector<double>(_dim, 
-		                                              0));
-		_sumScaleSqs = std::vector<std::vector<double>>(_reals.size(), 
-		                                                std::vector<double>(_dim, 
-		                                                0));
-		_sumsqs = std::vector<double>(_reals.size(), 0);
+		_sums = std::vector<double>(_muts.size(), 0);
+		_sumsqs = std::vector<double>(_muts.size(), 0);
 	}
 
-	for (size_t i = 0; i < _reals.size(); i++)
+	for (size_t i = 0; i < _muts.size(); i++)
 	{
 		double result = resultForResidue(i);
-		
-		for (size_t j = 0; j < _dim; j++)
-		{
-			_sumScales[i][j] += _scales[i][j];
-			_sumScaleSqs[i][j] += _scales[i][j] * _scales[i][j];
-		}
 
 		_sums[i] += result;
 		_sumsqs[i] += result * result;
 	}
-}
-
-void Loader::enablePairs(std::string line)
-{
-	std::vector<std::string> muts = split(line, ',');
-	std::cout << "Enabling cooperation between mutations ";
-	
-	for (size_t i = 0; i < muts.size(); i++)
-	{
-		std::string tmp = muts[i];
-		trim(tmp);
-		muts[i] = tmp;
-	}
-	
-	std::sort(muts.begin(), muts.end(), std::greater<std::string>());
-
-	for (size_t i = 0; i < muts.size() - 1; i++)
-	{
-		std::cout << muts[i] << ", ";
-		for (size_t j = i + 1; j < muts.size(); j++)
-		{
-			std::string combo = muts[i] + "+" + muts[j];
-			_muts.push_back(combo);
-		}
-	}
-	
-	std::cout << "and " << muts.back() << "." <<  std::endl;
 }

@@ -35,10 +35,6 @@ bool MyDictator::processRequest(std::string first, std::string last)
 	{
 		_serum->loadDefinitions(last);
 	}
-	else if (first == "remove-unused")
-	{
-		_serum->removeUnused();
-	}
 	else if (first == "write-errors")
 	{
 		_serum->writeOut(last, -1);
@@ -70,10 +66,6 @@ bool MyDictator::processRequest(std::string first, std::string last)
 	else if (first == "refine")
 	{
 		_serum->refine();
-	}
-	else if (first == "average-model")
-	{
-		_serum->loader()->setModelToAverage();
 	}
 	else if (first == "refine-offsets")
 	{

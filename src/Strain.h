@@ -21,19 +21,19 @@
 
 #include <map>
 
+class Loader;
+class Mutation;
+class Serum;
+
 class Strain
 {
 public:
 	Strain(std::string name);
 	
-	void setList(std::string list);
-	void addToMuts(std::vector<std::string> &unique);
-	std::vector<double> generateVector(std::vector<std::string> &full);
-	double compareToStrain(Strain *str, std::vector<double> &scales,
-	                        std::vector<std::string> &coops);
-
+	void setList(std::string list, std::vector<Mutation *> &unique);
+	std::vector<double> generateVector(std::vector<Mutation *> &full);
 	
-	double vectorCompare(Strain *str, std::vector<std::vector<double> > &scales);
+	double vectorCompare(Strain *str);
 
 	const std::string &name()
 	{
@@ -50,11 +50,21 @@ public:
 		return &_strength;
 	}
 	
-	bool hasMutation(std::string mut);
+	bool hasMutation(Mutation *mut);
 	
 	void clearPrecalculated()
 	{
 		_strainVecs.clear();
+	}
+	
+	void setLoader(Loader *l)
+	{
+		_loader = l;
+	}
+	
+	void needsRefresh(bool r = true)
+	{
+		_refresh = r;
 	}
 	
 	const std::vector<double> &mutVector()
@@ -66,22 +76,54 @@ public:
 	{
 		return _dir;
 	}
+	
+	size_t serumCount()
+	{
+		return _sera.size();
+	}
+	
+	Serum *serum(int i)
+	{
+		return _sera[i];
+	}
+	
+	void addSerum(Serum *s, double val, bool free = false)
+	{
+		_sera.push_back(s);
+		_values[s] = val;
+		_frees[s] = free;
+	}
+	
+	double serumValue(Serum *s)
+	{
+		return _values[s];
+	}
+	
+	bool freeSerum(Serum *s)
+	{
+		return _frees[s];
+	}
+	
+	bool hasSerum(Serum *s)
+	{
+		return _values.count(s);
+	}
 
-	static bool hasCooperative(Strain *a, Strain *b, std::string coop);
-
-	std::vector<std::string> combinedLists(Strain *other);
-	void findPosition(std::vector<std::vector<double> > &scales);
+	static void staticFindPosition(void *object);
+	void findPosition();
 private:
-	std::vector<double> scaleVector(std::vector<double> &scales,
-	                                std::vector<std::string> &coops,
-	                                Strain *other);
 	std::string _name;
-	std::vector<std::string> _list;
+	std::vector<Mutation *> _list;
 	std::vector<double> _vec;
 	
 	std::map<Strain *, std::vector<double>> _strainVecs;
 
+	Loader *_loader;
+	std::vector<Serum *> _sera;
+	std::map<Serum *, double> _values;
+	std::map<Serum *, bool> _frees;
 	double _strength;
+	bool _refresh;
 	std::vector<double> _dir;
 };
 
