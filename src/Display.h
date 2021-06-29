@@ -16,64 +16,21 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __serum__Serum__
-#define __serum__Serum__
+#ifndef __serum__Display__
+#define __serum__Display__
 
-#include <vector>
-#include <string>
+#include <QMainWindow>
 
-class Strain;
+class QTabWidget;
 
-class Serum
+class Display : public QMainWindow
 {
 public:
-	Serum(std::string name, Strain *strain);
+	Display(int argc, char *argv[]);
 
-	const std::string &name()
-	{
-		return _name;
-	}
-	
-	Strain *strain() 
-	{
-		return _strain;
-	}
-	
-	double strength()
-	{
-		return _strength;
-	}
-	
-	double *strengthPtr()
-	{
-		return &_strength;
-	}
-	
-	double offset()
-	{
-		return _offset;
-	}
-	
-	double *offsetPtr()
-	{
-		return &_offset;
-	}
-	
-	void addStrain(Strain *str)
-	{
-		_strains.push_back(str);
-	}
-	
-	int strainCount()
-	{
-		return _strains.size();
-	}
 private:
-	std::string _name;
-	Strain *_strain;
-	std::vector<Strain *> _strains;
-	double _strength;
-	double _offset;
+	void makeMenu();
+	QTabWidget *_tabs;
 
 };
 

@@ -66,6 +66,7 @@ bool MyDictator::processRequest(std::string first, std::string last)
 	else if (first == "refine")
 	{
 		_serum->refine();
+		return false;
 	}
 	else if (first == "refine-offsets")
 	{
@@ -74,6 +75,18 @@ bool MyDictator::processRequest(std::string first, std::string last)
 	else if (first == "refine-strengths")
 	{
 		_serum->loader()->setRefineStrength(true);
+	}
+	else if (first == "refine-strain-strengths")
+	{
+		_serum->loader()->setRefineStrainStrength(true);
+	}
+	else if (first == "refine-strain-offsets")
+	{
+		_serum->loader()->setRefineStrainOffset(true);
+	}
+	else if (first == "refine-asymmetric")
+	{
+		_serum->loader()->setRefineImportance(true);
 	}
 	else if (first == "dimension")
 	{

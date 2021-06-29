@@ -18,6 +18,7 @@
 
 #include <hcsrc/FileReader.h>
 #include "Strain.h"
+#include "Serum.h"
 #include "Loader.h"
 #include "Mutation.h"
 #include <iomanip>
@@ -26,6 +27,20 @@ Strain::Strain(std::string name)
 {
 	_refresh = true;
 	_name = name;
+	setText(0, QString::fromStdString(name));
+	_strength = 1;
+	_offset = 0;
+	int dim = Loader::dimensions();
+	_importance = std::vector<double>(dim, 1);
+}
+
+void Strain::reset()
+{
+	int dim = Loader::dimensions();
+	_strength = 1;
+	_offset = 0;
+	_importance = std::vector<double>(dim, 1);
+	needsRefresh();
 }
 
 void Strain::setList(std::string list, std::vector<Mutation *> &unique)
@@ -85,7 +100,6 @@ std::vector<double> Strain::generateVector(std::vector<Mutation *> &full)
 	}
 	
 	std::cout << std::endl;
-	_vec = vec;
 
 	return vec;
 }
@@ -104,13 +118,20 @@ void Strain::findPosition()
 
 	int dim = _loader->dimensions();
 	_dir = std::vector<double>(dim, 0);
+	_scaledDir = std::vector<double>(dim, 0);
 	
 	for (size_t i = 0; i < _list.size(); i++)
 	{
 		for (size_t j = 0; j < dim; j++)
 		{
-			_dir[j] += _list[i]->scalar(j);
+			_dir[j] += _list[i]->scalar(j) * _list[i]->scalar(j);
 		}
+	}
+	
+	for (size_t i = 0; i < dim; i++)
+	{
+		_dir[i] = sqrt(_dir[i]);
+		_scaledDir[i] = _importance[i] * _dir[i];
 	}
 	
 	_refresh = false;
@@ -123,5 +144,13 @@ double Strain::vectorCompare(Strain *str)
 		return 0;
 	}
 	
-	return Loader::resultForVector(&_dir[0], &str->_dir[0]);
+	return Loader::resultForVector(&_scaledDir[0], &str->_dir[0]);
+}
+
+void Strain::addSerum(Serum *s, double val, bool free)
+{
+	s->addStrain(this);
+	_sera.push_back(s);
+	_values[s] = val;
+	_frees[s] = free;
 }

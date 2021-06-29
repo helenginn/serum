@@ -5,6 +5,7 @@ qt5_dep = dependency('qt5', modules: ['Core', 'Gui', 'Widgets'], required : true
 dep_gl = dependency('gl', required : true)
 png_dep = dependency('libpng')
 c4x_dep = dependency('libcluster4x')
+ica_dep = dependency('libica')
 helen3d = dependency('helen3d')
 helencore = dependency('helencore')
 
@@ -28,14 +29,18 @@ gen_src = custom_target('commit-output',
 
 moc_files = qt5.preprocess(moc_headers : [
 'src/Loader.h', 
+'src/Plotter.h', 
 'src/SerumView.h', 
 ],
 		moc_extra_arguments: ['-DMAKES_MY_MOC_HEADER_COMPILE'])
 
 executable('something', gen_src, moc_files,
+'src/Display.cpp', 
 'src/Loader.cpp', 
 'src/Mutation.cpp', 
 'src/MyDictator.cpp', 
+'src/Plotter.cpp', 
+'src/Scatter.cpp', 
 'src/SerumView.cpp', 
 'src/Strain.cpp', 
 'src/Serum.cpp', 
@@ -43,6 +48,7 @@ executable('something', gen_src, moc_files,
 cpp_args: ['-std=c++11'], dependencies : [ 
 qt5_dep, 
 c4x_dep, 
+ica_dep, 
 dep_gl, 
 png_dep,
 helen3d,

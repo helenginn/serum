@@ -40,7 +40,6 @@ public:
 
 	void load(std::string filename);
 	void refine();
-	void refineLoop(int count);
 	void populateRaw(double ***ptr, int type = 0);
 	void writeOut(std::string filename, int type);
 	void antigenicity(std::string filename);
@@ -50,13 +49,23 @@ public:
 	void writeResultVectors(std::string filename);
 	void populateNames(char ****ptr);
 	
+	const std::vector<Mutation *> &mutations()
+	{
+		return _muts;
+	}
+
+	const std::vector<Strain *> &strains()
+	{
+		return _strains;
+	}
+	
 	void setDimension(int dim)
 	{
 		_dim = dim;
 		if (_dim <= 0) _dim = 1;
 	}
 	
-	int dimensions()
+	static int dimensions()
 	{
 		return _dim;
 	}
@@ -66,9 +75,24 @@ public:
 		_refineOffset = refine;
 	}
 	
+	void setRefineStrainStrength(bool refine)
+	{
+		_refineStrainStrength = refine;
+	}
+	
+	void setRefineStrainOffset(bool refine)
+	{
+		_refineStrainOffset = refine;
+	}
+
 	void setRefineStrength(bool refine)
 	{
 		_refineStrength = refine;
+	}
+
+	void setRefineImportance(bool refine)
+	{
+		_refineImportance = refine;
 	}
 	
 	void perResidueAntigenicity(std::string filename);
@@ -90,15 +114,20 @@ public:
 
 	static double resultForDirection(double *dir);
 	static double resultForVector(double *dir1, double *dir2);
+public slots:
+	void refineLoop();
 signals:
 	void resultReady();
 	void update();
 private:
+	void rotations();
+	void bestRotation();
 	void prepare();
 	void fillInZeros();
 	void defineStrain(std::string strain);
 	void defineChallenge(std::string str);
 	void defineSerum(std::string str);
+	void silenceMutations(std::string str);
 	void degenerateSummary();
 	void prepareVectors();
 	void addResult();
@@ -133,7 +162,11 @@ private:
 	int _count;
 	bool _refineOffset;
 	bool _refineStrength;
+	bool _refineImportance;
+	bool _refineStrainStrength;
+	bool _refineStrainOffset;
 	double _scale;
+	double _best;
 	static double *_scratch;
 	static int _dim;
 };

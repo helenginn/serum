@@ -2,7 +2,7 @@
 #include <iostream>
 #include <QApplication>
 #include <QOpenGLContext>
-#include "SerumView.h"
+#include "Display.h"
 #include "commit.h"
 
 int main(int argc, char * argv[])
@@ -38,9 +38,13 @@ int main(int argc, char * argv[])
 	
 	std::cout << "Program version: " << CHECK_VERSION_COMMIT_ID << std::endl;
 	
+	Display display(argc, argv);
+	display.show();
+	/*
 	SerumView serum(NULL);
 	serum.show();
 	serum.setCommandLineArgs(argc, argv);
+	*/
 
 	int status = app.exec();
 	

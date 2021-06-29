@@ -21,10 +21,12 @@
 
 #include <string>
 #include <vector>
+#include <map>
+#include <QTreeWidgetItem>
 
 class Strain;
 
-class Mutation
+class Mutation : public QTreeWidgetItem
 {
 public:
 	Mutation(std::string mut, int dims = 3);
@@ -49,6 +51,29 @@ public:
 		_strains.push_back(strain);
 	}
 	
+	void saveVector(int idx, bool imp = false);
+	void loadSaved(int i);
+	
+	int trials()
+	{
+		return _saved.size();
+	}
+	
+	void silence(bool s)
+	{
+		_silenced = s;
+	}
+	
+	bool silenced()
+	{
+		return _silenced;
+	}
+	
+	std::vector<double> &savedVector(int idx)
+	{
+		return _saved[idx];
+	}
+	
 	double *scalarPtr(int i)
 	{
 		return &_vec[i];
@@ -56,20 +81,29 @@ public:
 	
 	double scalar(int i)
 	{
-		return _vec[i];
+		return fabs(_vec[i]);
 	}
 	
 	void randomiseVector();
 	
 	std::vector<double> &asVector();
+	double crossCorrelation(int i, int j);
+	void rotateCurrent(double **rot);
+	void subtract(std::vector<double> sub);
 	
 	static void refresh(void *object);
+	static std::vector<double> centroid(std::vector<Mutation *> list);
 private:
+	void findWeight();
 	std::string _mut;
 	std::vector<Strain *> _strains;
 	std::vector<double> _vector;
 	int _dim;
+	double _weight;
 	double *_vec;
+	bool _silenced;
+	int _best;
+	std::map<int, std::vector<double> > _saved;
 };
 
 #endif

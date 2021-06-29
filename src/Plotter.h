@@ -15,66 +15,33 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
+#ifndef __serum__Plotter__
+#define __serum__Plotter__
 
-#ifndef __serum__Serum__
-#define __serum__Serum__
+#include <h3dsrc/SlipGL.h>
 
-#include <vector>
-#include <string>
-
+class QTreeWidget;
+class Scatter;
+class Mutation;
 class Strain;
 
-class Serum
+class Plotter : public SlipGL
 {
+Q_OBJECT
 public:
-	Serum(std::string name, Strain *strain);
+	Plotter(QWidget *parent);
+	
+	void setTree(QTreeWidget *w);
 
-	const std::string &name()
-	{
-		return _name;
-	}
-	
-	Strain *strain() 
-	{
-		return _strain;
-	}
-	
-	double strength()
-	{
-		return _strength;
-	}
-	
-	double *strengthPtr()
-	{
-		return &_strength;
-	}
-	
-	double offset()
-	{
-		return _offset;
-	}
-	
-	double *offsetPtr()
-	{
-		return &_offset;
-	}
-	
-	void addStrain(Strain *str)
-	{
-		_strains.push_back(str);
-	}
-	
-	int strainCount()
-	{
-		return _strains.size();
-	}
+	void replot(const std::vector<Mutation *> &muts);
+	void replot(const std::vector<Strain *> &strains);
+public slots:
+	void replotSelection();
 private:
-	std::string _name;
-	Strain *_strain;
-	std::vector<Strain *> _strains;
-	double _strength;
-	double _offset;
+	Scatter *_scatter;
+	QTreeWidget *_tree;
 
 };
 
 #endif
+

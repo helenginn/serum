@@ -20,12 +20,13 @@
 #define __serum__Strain__
 
 #include <map>
+#include <QTreeWidgetItem>
 
 class Loader;
 class Mutation;
 class Serum;
 
-class Strain
+class Strain : public QTreeWidgetItem
 {
 public:
 	Strain(std::string name);
@@ -50,12 +51,24 @@ public:
 		return &_strength;
 	}
 	
+	double offset()
+	{
+		return _offset;
+	}
+	
+	double *offsetPtr()
+	{
+		return &_offset;
+	}
+	
+	double *importancePtr(int j)
+	{
+		return &_importance[j];
+	}
+
 	bool hasMutation(Mutation *mut);
 	
-	void clearPrecalculated()
-	{
-		_strainVecs.clear();
-	}
+	void reset();
 	
 	void setLoader(Loader *l)
 	{
@@ -65,11 +78,6 @@ public:
 	void needsRefresh(bool r = true)
 	{
 		_refresh = r;
-	}
-	
-	const std::vector<double> &mutVector()
-	{
-		return _vec;
 	}
 	
 	const std::vector<double> &direction()
@@ -87,12 +95,7 @@ public:
 		return _sera[i];
 	}
 	
-	void addSerum(Serum *s, double val, bool free = false)
-	{
-		_sera.push_back(s);
-		_values[s] = val;
-		_frees[s] = free;
-	}
+	void addSerum(Serum *s, double val, bool free = false);
 	
 	double serumValue(Serum *s)
 	{
@@ -114,7 +117,6 @@ public:
 private:
 	std::string _name;
 	std::vector<Mutation *> _list;
-	std::vector<double> _vec;
 	
 	std::map<Strain *, std::vector<double>> _strainVecs;
 
@@ -123,8 +125,10 @@ private:
 	std::map<Serum *, double> _values;
 	std::map<Serum *, bool> _frees;
 	double _strength;
+	double _offset;
 	bool _refresh;
-	std::vector<double> _dir;
+	std::vector<double> _dir, _scaledDir;
+	std::vector<double> _importance;
 };
 
 #endif

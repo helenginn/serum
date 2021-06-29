@@ -21,20 +21,26 @@
 #include "Mutation.h"
 #include "Serum.h"
 #include <fstream>
+#include <iomanip>
 #include <algorithm>
 #include <hcsrc/FileReader.h>
 #include <hcsrc/RefinementNelderMead.h>
 #include <hcsrc/RefinementLBFGS.h>
 #include <hcsrc/Any.h>
 #include <libsrc/shared_ptrs.h>
+#include <libica/svdcmp.h>
 
 int Loader::_dim = 2;
 double *Loader::_scratch = NULL;
 
 Loader::Loader()
 {
+	_best = 1000;
 	_refineOffset = false;
 	_refineStrength = false;
+	_refineImportance = false;
+	_refineStrainOffset = false;
+	_refineStrainStrength = false;
 	_count = 0;
 	_scale = 1;
 }
@@ -73,6 +79,12 @@ void Loader::load(std::string filename)
 			line.erase(0, strlen("challenge "));
 			defineChallenge(line);
 		}
+
+		if (line.rfind("silence ", 0) == 0)
+		{
+			line.erase(0, strlen("silence "));
+			silenceMutations(line);
+		}
 	}
 	
 	reorderMutations();
@@ -108,7 +120,6 @@ void Loader::prepareVectors()
 	
 	for (size_t i = 0; i < _strains.size(); i++)
 	{
-		_strains[i]->clearPrecalculated();
 		std::vector<double> vecs = _strains[i]->generateVector(_muts);
 	}
 
@@ -117,18 +128,24 @@ void Loader::prepareVectors()
 	std::cout << "All " << _muts.size() << " mutations over " << _strains.size() 
 	<< " strains: " << std::endl;
 
+	int usable = 0;
 	for (size_t i = 0; i < _muts.size(); i++)
 	{
 		std::cout << _muts[i]->str() << " " << std::flush;
+		if (!_muts[i]->silenced())
+		{
+			usable++;
+		}
 	}
 
 	std::cout << std::endl;
+	std::cout << "Of those: " << usable << " for refinement." << std::endl;
 
 	size_t count = 0;
 	
 	for (size_t i = 0; i < _strains.size(); i++)
 	{
-		count += serumCount();
+		count += _strains[i]->serumCount();
 	}
 
 	std::cout << "Total number of observations: " << count << std::endl;
@@ -274,6 +291,23 @@ void Loader::defineStrain(std::string str)
 	_name2Strain[strain->name()] = strain;
 }
 
+void Loader::silenceMutations(std::string str)
+{
+	trim(str);
+	std::vector<std::string> mutations = split(str, ',');
+	
+	for (size_t i = 0; i < mutations.size(); i++)
+	{
+		for (size_t j = 0; j < _muts.size(); j++)
+		{
+			if (_muts[j]->str() == mutations[i])
+			{
+				_muts[j]->silence(true);
+			}
+		}
+	}
+}
+
 void Loader::defineChallenge(std::string str)
 {
 	std::vector<std::string> challenges = split(str, ',');
@@ -320,8 +354,9 @@ void Loader::defineChallenge(std::string str)
 	one->addSerum(two, val, free);
 }
 
-void Loader::refineLoop(int count)
+void Loader::refineLoop()
 {
+	int count = 15;
 	std::cout << "*** REFINE ***" << std::endl;
 	srand(time(NULL));
 
@@ -333,6 +368,72 @@ void Loader::refineLoop(int count)
 	}
 	
 	updateSums();
+	
+	/*
+	std::cout << "Importance classes:" << std::endl;
+	for (size_t i = 0; i < _strains.size(); i++)
+	{
+		if (_strains[i]->serumCount() <= _dim)
+		{
+			continue;
+		}
+
+		std::cout << "\t" << std::setw(12) << _strains[i]->name() << " ";
+		
+		for (size_t j = 0; j < _dim; j++)
+		{
+			double val = *(_strains[i]->importancePtr(j));
+			std::cout << std::setw(12) << std::setprecision(3) <<  
+			val << " ";
+		}
+		
+		std::cout << std::endl;
+	}
+	std::cout << std::endl;
+
+	for (size_t i = 0; i < _strains.size(); i++)
+	{
+			std::cout << _strains[i]->serumCount() << std::endl;
+		if (_strains[i]->serumCount() <= 3)
+		{
+			continue;
+		}
+
+		std::cout << std::setw(8) << _strains[i]->name() << " ";
+	}
+
+	std::cout << std::endl;
+	
+	for (size_t i = 0; i < _muts.size(); i++)
+	{
+		continue;
+		std::cout << _muts[i]->str() << " ";
+		for (size_t j = 0; j < _strains.size(); j++)
+		{
+			if (_strains[j]->serumCount() <= 3)
+			{
+				continue;
+			}
+			double *wip = new double[_dim];
+			for (size_t k = 0; k < _dim; k++)
+			{
+				double val = _muts[i]->scalar(k);
+				wip[k] = val;
+			}
+
+			for (size_t k = 0; k < _dim; k++)
+			{
+				wip[k] *= *(_strains[j]->importancePtr(k));
+			}
+			
+			double val = resultForDirection(wip);
+
+			std::cout << std::setw(8) << val << " ";
+			delete [] wip;
+		}
+		std::cout << std::endl;
+	}
+	*/
 	
 	addResult();
 
@@ -384,6 +485,11 @@ void Loader::prepare()
 		(*_sera[i]->strengthPtr()) = 1;
 		(*_sera[i]->offsetPtr()) = 0;
 	}
+	
+	for (size_t i = 0; i < _strains.size(); i++)
+	{
+		_strains[i]->reset();
+	}
 
 	std::cout << "Starting score: " << score() << std::endl;
 }
@@ -402,6 +508,11 @@ void Loader::refine()
 
 	for (size_t i = 0; i < _muts.size(); i++)
 	{
+		if (_muts[i]->silenced())
+		{
+			continue;
+		}
+
 		for (size_t j = 0; j < _dim; j++)
 		{
 			Any *any_real = new Any(_muts[i]->scalarPtr(j));
@@ -412,6 +523,50 @@ void Loader::refine()
 
 			n->addParameter(any_real, Any::get, Any::set, 0.2, 0.02, 
 			                mut + "_" + i_to_str(j));
+		}
+	}
+
+	for (size_t i = 0; i < _strains.size(); i++)
+	{
+		if (_strains[i]->serumCount() <= _dim)
+		{
+			continue;
+		}
+
+		for (size_t j = 0; j < _dim && _refineImportance; j++)
+		{
+			Any *any_real = new Any(_strains[i]->importancePtr(j));
+			_anys.push_back(any_real);
+			any_real->setRefresh(Strain::staticFindPosition, _strains[i]);
+
+			std::string str = _strains[i]->name();
+
+			n->addParameter(any_real, Any::get, Any::set, 0.2, 0.02, 
+			                str + "_imp_" + i_to_str(j));
+		}
+		
+		if (_refineStrainOffset)
+		{
+			Any *any_real = new Any(_strains[i]->offsetPtr());
+			_anys.push_back(any_real);
+			any_real->setRefresh(Strain::staticFindPosition, _strains[i]);
+
+			std::string str = _strains[i]->name();
+
+			n->addParameter(any_real, Any::get, Any::set, 0.2, 0.02, 
+			                str + "_offset");
+		}
+		
+		if (_refineStrainStrength)
+		{
+			Any *any_real = new Any(_strains[i]->strengthPtr());
+			_anys.push_back(any_real);
+			any_real->setRefresh(Strain::staticFindPosition, _strains[i]);
+
+			std::string str = _strains[i]->name();
+
+			n->addParameter(any_real, Any::get, Any::set, 0.2, 0.02, 
+			                str + "_strength");
 		}
 	}
 
@@ -454,9 +609,9 @@ void Loader::refine()
 double Loader::modelForPair(Strain *strain, Serum *serum)
 {
 	Strain *orig = serum->strain();
-	double strength = serum->strength() / 1;
-	double offset = serum->offset();
-	double result = strain->vectorCompare(orig);
+	double strength = serum->strength();
+	double offset = serum->offset() + strain->offset();
+	double result = orig->vectorCompare(strain);
 
 	double val = -result * strength;
 	val -= offset;
@@ -660,15 +815,15 @@ double Loader::resultForVector(double *dir1, double *dir2)
 
 double Loader::resultForDirection(double *dir)
 {
-	double sum = 0;
 	double pos = 0;
 	double neg = 0;
+	double sum = 0;
 
 	for (size_t j = 0; j < _dim; j++)
 	{
 		double contrib = (dir[j] * dir[j]);
 		sum += contrib;
-		if (j >= 2)
+		if (j >= _dim - 1)
 		{
 			neg += contrib;
 		}
@@ -679,6 +834,7 @@ double Loader::resultForDirection(double *dir)
 	}
 
 	double sq = sqrt(pos) - sqrt(neg);
+	sq = sqrt(sum);
 	return sq;
 }
 
@@ -694,6 +850,11 @@ void Loader::perResidueAntigenicity(std::string filename)
 	file << "mutation, x, y, z" << std::endl;
 	for (size_t i = 0; i < _muts.size(); i++)
 	{
+		if (_muts[i]->silenced())
+		{
+			continue;
+		}
+
 		file << _muts[i]->str() << ", ";
 		for (size_t j = 0; j < _dim; j++)
 		{
@@ -709,8 +870,8 @@ void Loader::perResidueAntigenicity(std::string filename)
 	{
 		for (size_t j = 0; j < _muts.size(); j++)
 		{
-			double result = resultForVector(_muts[i]->scalarPtr(i),
-			                                _muts[j]->scalarPtr(j));
+			double result = resultForVector(_muts[i]->scalarPtr(0),
+			                                _muts[j]->scalarPtr(0));
 
 			file << _muts[i]->str() << "," << _muts[j]->str() << "," << result << std::endl;
 		}
@@ -738,10 +899,10 @@ void Loader::perResidueAntigenicity(std::string filename)
 	
 	file.open("strain_distance_" + filename);
 
-	for (size_t i = 0; i < _strains.size(); i++)
+	for (size_t i = 0; i < _strains.size() - 1; i++)
 	{
 		_strains[i]->findPosition();
-		for (size_t j = 0; j < _strains.size(); j++)
+		for (size_t j = i + 1; j < _strains.size(); j++)
 		{
 			_strains[j]->findPosition();
 			double result = _strains[i]->vectorCompare(_strains[j]);
@@ -784,6 +945,14 @@ void Loader::antigenicity(std::string filename)
 void Loader::updateSums()
 {
 	_count++;
+	
+	double s = score();
+	bool improved = false;
+	if (s < _best)
+	{
+		_best = s;
+		improved = true;
+	}
 
 	if (_sums.size() == 0)
 	{
@@ -797,5 +966,88 @@ void Loader::updateSums()
 
 		_sums[i] += result;
 		_sumsqs[i] += result * result;
+		_muts[i]->saveVector(-1, improved);
+	}
+	
+	rotations();
+
+}
+
+void Loader::rotations()
+{
+	for (size_t i = 0; i < _muts[0]->trials(); i++)
+	{
+		for (size_t n = 0; n < _muts.size(); n++)
+		{
+			_muts[n]->loadSaved(i);
+		}
+		
+		bestRotation();
+
+		for (size_t n = 0; n < _muts.size(); n++)
+		{
+			_muts[n]->saveVector(i);
+		}
+	}
+}
+
+void Loader::bestRotation()
+{
+	double *vals = (double *)calloc(_dim * _dim, sizeof(double));
+	double **ptrs = (double **)malloc(sizeof(double *) * _dim);
+	double *w = (double *)malloc(sizeof(double) * _dim);
+
+	double *vVals = (double *)calloc(_dim * _dim, sizeof(double));
+	double **vPtrs = (double **)malloc(sizeof(double *) * _dim);
+	
+	for (size_t i = 0; i < _dim; i++)
+	{
+		ptrs[i] = &vals[i * _dim];
+		vPtrs[i] = &vVals[i * _dim];
+	}
+
+	for (size_t n = 0; n < _muts.size(); n++)
+	{
+		for (size_t j = 0; j < _dim; j++)
+		{
+			for (size_t i = 0; i < _dim; i++)
+			{
+				double add = _muts[n]->crossCorrelation(i, j);
+				ptrs[i][j] += add;
+			}
+		}
+	}
+
+	int success = svdcmp((mat)ptrs, _dim, _dim, (vect) w, (mat) vPtrs);
+	
+	free(w);
+
+	if (!success)
+	{
+		return;
+	}
+
+	double *rotvals = (double *)calloc(_dim * _dim, sizeof(double));
+	double **rot = (double **)malloc(sizeof(double *) * _dim);
+	
+	for (size_t i = 0; i < _dim; i++)
+	{
+		rot[i] = &rotvals[i * _dim];
+	}
+	
+	for (size_t j = 0; j < _dim; j++)
+	{
+		for (size_t i = 0; i < _dim; i++)
+		{
+			for (size_t n = 0; n < _dim; n++)
+			{
+				rot[i][j] += vPtrs[i][n] * ptrs[j][n];
+			}
+		}
+	}
+	
+	for (size_t i = 0; i < _muts.size(); i++)
+	{
+		_muts[i]->rotateCurrent(rot);
 	}
 }

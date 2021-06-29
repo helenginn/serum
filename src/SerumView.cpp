@@ -24,11 +24,14 @@
 #include <QMouseEvent>
 #include <QLabel>
 #include <c4xsrc/MatrixView.h>
+#include "Plotter.h"
 //#include <QChart>
 //#include <QChartView>
 
 SerumView::SerumView(QWidget *p) : QMainWindow(p)
 {
+	_mutPlot = NULL;
+	_strainPlot = NULL;
 	_worker = NULL;
 	_loader = new Loader();
 	
@@ -69,6 +72,8 @@ SerumView::SerumView(QWidget *p) : QMainWindow(p)
 
 void SerumView::setCommandLineArgs(int argc, char *argv[])
 {
+	show();
+
 	for (int i = 1; i < argc; i++)
 	{
 		std::string str = argv[i];
@@ -101,9 +106,14 @@ void SerumView::refine()
 		return;
 	}
 
-	connect(_loader, SIGNAL(resultReady()), this, SLOT(handleResult()));
+	connect(_loader, SIGNAL(resultReady()), this, SLOT(handleResult()),
+	        Qt::UniqueConnection);
+	connect(this, SIGNAL(start()), _loader, SLOT(refineLoop()),
+	        Qt::UniqueConnection);
+	_worker->start();
 
-	_loader->refineLoop(25);
+	emit start();
+//	_loader->refineLoop();
 }
 
 void SerumView::mousePressEvent(QMouseEvent *e)
@@ -154,6 +164,16 @@ void SerumView::updateView()
 	_mv->setNames(names);
 	
 	free(raw);
+	
+	if (_mutPlot)
+	{
+		_mutPlot->replot(_loader->mutations());
+	}
+	
+	if (_strainPlot)
+	{
+		_strainPlot->replot(_loader->strains());
+	}
 }
 
 void SerumView::writeOut(std::string filename, int type)
@@ -175,7 +195,11 @@ void SerumView::setScale(double scale)
 void SerumView::handleResult()
 {
 	_worker->quit();
+	_worker->wait();
+
 	updateView();
+	
+	_dictator->incrementJob();
 }
 
 bool SerumView::prepareWorkForObject(QObject *object)
@@ -214,7 +238,7 @@ void SerumView::run()
 
 	for (size_t i = 0; i < 30; i++)
 	{
-		_loader->refineLoop(25);
+		_loader->refineLoop();
 		if (i % 3 == 0)
 		{
 			_loader->writeResultVectors("vectors.csv");

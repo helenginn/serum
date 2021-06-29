@@ -23,6 +23,7 @@
 #include <QThread>
 
 class MyDictator;
+class Plotter;
 class MatrixView;
 class Loader;
 class QThread;
@@ -44,10 +45,18 @@ public:
 	void setScale(double scale);
 	void run();
 	
+	void setPlotters(Plotter *mut, Plotter *strain)
+	{
+		_mutPlot = mut;
+		_strainPlot = strain;
+	}
+	
 	Loader *loader()
 	{
 		return _loader;
 	}
+signals:
+	void start();
 protected:
 	virtual void mousePressEvent(QMouseEvent *e);
 private slots:
@@ -65,6 +74,8 @@ private:
 	QLabel *_modelLabel;
 	QLabel *_errorLabel;
 	QLabel *_lWhat;
+	Plotter *_mutPlot;
+	Plotter *_strainPlot;
 };
 
 #endif

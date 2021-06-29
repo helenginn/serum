@@ -16,64 +16,35 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __serum__Serum__
-#define __serum__Serum__
+#ifndef __serum__Scatter__
+#define __serum__Scatter__
 
-#include <vector>
-#include <string>
+#include <h3dsrc/Plot3D.h>
+#include <hcsrc/FileReader.h>
 
+class Mutation;
 class Strain;
 
-class Serum
+class Scatter : public Plot3D
 {
 public:
-	Serum(std::string name, Strain *strain);
+	Scatter();
+	
+	void populate() {};
 
-	const std::string &name()
+	void populateFromMutations(const std::vector<Mutation *> &muts);
+	void populateFromStrains(const std::vector<Strain *> &strains);
+	
+	virtual size_t axisCount()
 	{
-		return _name;
+		return 3;
 	}
 	
-	Strain *strain() 
+	virtual std::string axisLabel(int i)
 	{
-		return _strain;
-	}
-	
-	double strength()
-	{
-		return _strength;
-	}
-	
-	double *strengthPtr()
-	{
-		return &_strength;
-	}
-	
-	double offset()
-	{
-		return _offset;
-	}
-	
-	double *offsetPtr()
-	{
-		return &_offset;
-	}
-	
-	void addStrain(Strain *str)
-	{
-		_strains.push_back(str);
-	}
-	
-	int strainCount()
-	{
-		return _strains.size();
+		return "axis_" + i_to_str(i);
 	}
 private:
-	std::string _name;
-	Strain *_strain;
-	std::vector<Strain *> _strains;
-	double _strength;
-	double _offset;
 
 };
 
