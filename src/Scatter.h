@@ -24,6 +24,7 @@
 
 class Mutation;
 class Strain;
+class Icosahedron;
 
 class Scatter : public Plot3D
 {
@@ -34,6 +35,7 @@ public:
 
 	void populateFromMutations(const std::vector<Mutation *> &muts);
 	void populateFromStrains(const std::vector<Strain *> &strains);
+	void strainWalk(Strain *strain);
 	
 	virtual size_t axisCount()
 	{
@@ -44,7 +46,13 @@ public:
 	{
 		return "axis_" + i_to_str(i);
 	}
+	
+	virtual void render(SlipGL *gl);
 private:
+	Icosahedron *ico(mat3x3 tensor, vec3 pos, double colour = 0, int tri = 1);
+	void reorderMutations(std::vector<Mutation *> &muts);
+	void clearBalls();
+	std::vector<SlipObject *> _objs;
 
 };
 

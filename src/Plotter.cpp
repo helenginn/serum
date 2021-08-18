@@ -26,6 +26,10 @@
 Plotter::Plotter(QWidget *parent) : SlipGL(parent)
 {
 	_r = 1; _g = 1; _b = 1;
+	setFocus(Qt::MouseFocusReason);
+	setFocusPolicy(Qt::StrongFocus);
+	_controlPressed = false;
+	_shiftPressed = false;
 	
 	{
 		GLAxis *x = new GLAxis(make_vec3(1, 0, 0));

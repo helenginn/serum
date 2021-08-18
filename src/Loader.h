@@ -25,7 +25,9 @@
 #include <map>
 #include <QObject>
 
+class Workbench;
 class Mutation;
+class Table;
 class Strain;
 class Serum;
 class Any;
@@ -36,139 +38,42 @@ class Loader : public QObject
 {
 Q_OBJECT
 public:
-	Loader();
+	Loader(Workbench *b);
 
 	void load(std::string filename);
-	void refine();
-	void populateRaw(double ***ptr, int type = 0);
-	void writeOut(std::string filename, int type);
-	void antigenicity(std::string filename);
-	void reorderMutations();
-	void updateSums();
-	void setModelToAverage();
-	void writeResultVectors(std::string filename);
-	void populateNames(char ****ptr);
+	void parseSpreadsheet(std::string folder);
 	
-	const std::vector<Mutation *> &mutations()
+	void addAcceptableResidue(int i)
 	{
-		return _muts;
-	}
-
-	const std::vector<Strain *> &strains()
-	{
-		return _strains;
+		_acceptResidues.push_back(i);
 	}
 	
-	void setDimension(int dim)
-	{
-		_dim = dim;
-		if (_dim <= 0) _dim = 1;
-	}
-	
-	static int dimensions()
-	{
-		return _dim;
-	}
-	
-	void setRefineOffset(bool refine)
-	{
-		_refineOffset = refine;
-	}
-	
-	void setRefineStrainStrength(bool refine)
-	{
-		_refineStrainStrength = refine;
-	}
-	
-	void setRefineStrainOffset(bool refine)
-	{
-		_refineStrainOffset = refine;
-	}
-
-	void setRefineStrength(bool refine)
-	{
-		_refineStrength = refine;
-	}
-
-	void setRefineImportance(bool refine)
-	{
-		_refineImportance = refine;
-	}
-	
-	void perResidueAntigenicity(std::string filename);
-	
-	void setScale(double scale)
-	{
-		_scale = scale;
-	}
-	
-	size_t strainCount()
-	{
-		return _strains.size();
-	}
-	
-	size_t serumCount()
-	{
-		return _sera.size();
-	}
-
-	static double resultForDirection(double *dir);
-	static double resultForVector(double *dir1, double *dir2);
-public slots:
-	void refineLoop();
+	bool isAcceptable(int i);
 signals:
-	void resultReady();
 	void update();
 private:
-	void rotations();
-	void bestRotation();
-	void prepare();
-	void fillInZeros();
-	void defineStrain(std::string strain);
-	void defineChallenge(std::string str);
-	void defineSerum(std::string str);
-	void silenceMutations(std::string str);
-	void degenerateSummary();
-	void prepareVectors();
-	void addResult();
-	double modelForPair(Strain *strain, Serum *serum);
-	double vectorModelForPair(Strain *strain, Serum *serum);
-	double score();
-	double simpleScore(double weight);
-	double vectorScore();
-	double resultForResidue(int i);
-	double restraintForResidue(int i);
-	static double gradientRefresh(void *object);
-	
-	static double sscore(void *object)
-	{
-		double val =static_cast<Loader *>(object)->score();
-		return val;
-	}
+	void addNewSera(Strain *str, std::vector<std::string> &list);
+	void loadCSV(std::string &filename);
+	size_t doLine(std::vector<std::string > &lines, size_t line);
+	size_t doStrain(std::vector<std::string > &lines, size_t line);
+	size_t doChallenge(std::vector<std::string > &lines, size_t line);
 
-	std::string _results;
-	std::vector<double> _sums, _sumsqs;
-	std::string _filename;
+	void silenceMutations(std::string str);
+
+	Workbench *_bench;
 
 	std::vector<Strain *> _strains;
 	std::vector<Serum *> _sera;
 	std::vector<Mutation *> _muts;
+	std::vector<Table *> _tables;
 
 	std::map<std::string, Strain *> _name2Strain;
 	std::map<std::string, Serum *> _name2Serum;
-
-	std::vector<Any *> _anys;
-
-	int _count;
-	bool _refineOffset;
-	bool _refineStrength;
-	bool _refineImportance;
-	bool _refineStrainStrength;
-	bool _refineStrainOffset;
-	double _scale;
-	double _best;
-	static double *_scratch;
-	static int _dim;
+	bool _forgiving;
+	std::string _filename;
+	std::string _folder;
+	Table *_currentTable;
+	std::vector<int> _acceptResidues;
 };
 
 #endif

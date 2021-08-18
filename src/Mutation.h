@@ -19,6 +19,8 @@
 #ifndef __Mutation__Mutation__
 #define __Mutation__Mutation__
 
+#include <hcsrc/vec3.h>
+#include <hcsrc/mat3x3.h>
 #include <string>
 #include <vector>
 #include <map>
@@ -30,6 +32,9 @@ class Mutation : public QTreeWidgetItem
 {
 public:
 	Mutation(std::string mut, int dims = 3);
+	
+	void reset();
+	void resetOriginal();
 
 	std::string str()
 	{
@@ -59,6 +64,11 @@ public:
 		return _saved.size();
 	}
 	
+	std::vector<double> &trial(int i)
+	{
+		return _saved[i];
+	}
+	
 	void silence(bool s)
 	{
 		_silenced = s;
@@ -74,6 +84,23 @@ public:
 		return _saved[idx];
 	}
 	
+	std::vector<double> &savedOrigin(int idx)
+	{
+		return _savedOrigs[idx];
+	}
+	
+	double *easePtr()
+	{
+		return &_ease;
+	}
+	
+	double averageEase();
+	
+	double ease()
+	{
+		return _ease;
+	}
+	
 	double *scalarPtr(int i)
 	{
 		return &_vec[i];
@@ -81,12 +108,39 @@ public:
 	
 	double scalar(int i)
 	{
-		return fabs(_vec[i]);
+		return _vec[i];
 	}
 	
+	static double origin(int i)
+	{
+		return _original[i];
+	}
+	
+	double *originPtr(int i)
+	{
+		return &_original[i];
+	}
+	
+	mat3x3 tensor()
+	{
+		return _tensor;
+	}
+	
+	vec3 centre()
+	{
+		return _centre;
+	}
+	
+	int residue()
+	{
+		return _res;
+	}
+
 	void randomiseVector();
 	
-	std::vector<double> &asVector();
+	void calculateCloud();
+	
+	std::vector<double> &asVector(double *from);
 	double crossCorrelation(int i, int j);
 	void rotateCurrent(double **rot);
 	void subtract(std::vector<double> sub);
@@ -98,11 +152,18 @@ private:
 	std::string _mut;
 	std::vector<Strain *> _strains;
 	std::vector<double> _vector;
-	int _dim;
+	std::vector<double> _eases;
+	static double *_original;
+	static int _dim;
+	mat3x3 _tensor;
+	vec3 _centre;
 	double _weight;
 	double *_vec;
 	bool _silenced;
+	double _ease;
+	int _res;
 	int _best;
+	std::map<int, std::vector<double> > _savedOrigs;
 	std::map<int, std::vector<double> > _saved;
 };
 

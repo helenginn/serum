@@ -18,7 +18,7 @@
 
 #include "MyDictator.h"
 #include "SerumView.h"
-#include "Loader.h"
+#include "Workbench.h"
 
 MyDictator::MyDictator(SerumView *s) : Dictator()
 {
@@ -31,9 +31,13 @@ bool MyDictator::processRequest(std::string first, std::string last)
 	{
 		exit(0);
 	}
-	else if (first == "load")
+	else if (first == "spreadsheet")
 	{
-		_serum->loadDefinitions(last);
+		_serum->loadSpreadsheet(last);
+	}
+	else if (first == "free")
+	{
+		_serum->workbench()->makeStrainFree(last);
 	}
 	else if (first == "write-errors")
 	{
@@ -51,13 +55,21 @@ bool MyDictator::processRequest(std::string first, std::string last)
 	{
 		_serum->resultVectors(last);
 	}
+	else if (first == "cluster-mutations")
+	{
+		_serum->workbench()->clusterMutations(last);
+	}
 	else if (first == "write-antigenicity")
 	{
 		_serum->antigenicity(last);
 	}
 	else if (first == "per-residue")
 	{
-		_serum->loader()->perResidueAntigenicity(last);
+		_serum->workbench()->perResidueAntigenicity(last);
+	}
+	else if (first == "accept-residues")
+	{
+		_serum->acceptMutations(last);
 	}
 	else if (first == "scale")
 	{
@@ -68,29 +80,33 @@ bool MyDictator::processRequest(std::string first, std::string last)
 		_serum->refine();
 		return false;
 	}
+	else if (first == "refine-ease")
+	{
+		_serum->workbench()->setRefineEase(true);
+	}
 	else if (first == "refine-offsets")
 	{
-		_serum->loader()->setRefineOffset(true);
+		_serum->workbench()->setRefineOffset(true);
 	}
 	else if (first == "refine-strengths")
 	{
-		_serum->loader()->setRefineStrength(true);
+		_serum->workbench()->setRefineStrength(true);
 	}
 	else if (first == "refine-strain-strengths")
 	{
-		_serum->loader()->setRefineStrainStrength(true);
+		_serum->workbench()->setRefineStrainStrength(true);
 	}
 	else if (first == "refine-strain-offsets")
 	{
-		_serum->loader()->setRefineStrainOffset(true);
+		_serum->workbench()->setRefineStrainOffset(true);
 	}
 	else if (first == "refine-asymmetric")
 	{
-		_serum->loader()->setRefineImportance(true);
+		_serum->workbench()->setRefineImportance(true);
 	}
 	else if (first == "dimension")
 	{
-		_serum->loader()->setDimension(atoi(last.c_str()));
+		_serum->workbench()->setDimension(atoi(last.c_str()));
 	}
 	else if (first == "run")
 	{

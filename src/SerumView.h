@@ -29,6 +29,7 @@ class Loader;
 class QThread;
 class QLabel;
 class QMouseEvent;
+class Workbench;
 
 class SerumView : public QMainWindow
 {
@@ -37,7 +38,7 @@ public:
 	SerumView(QWidget *p);
 
 	void setCommandLineArgs(int argc, char *argv[]);
-	void loadDefinitions(std::string filename);
+	void loadSpreadsheet(std::string folder);
 	void refine();
 	void resultVectors(std::string filename);
 	void writeOut(std::string filename, int type);
@@ -45,15 +46,17 @@ public:
 	void setScale(double scale);
 	void run();
 	
+	void acceptMutations(std::string muts);
+	
 	void setPlotters(Plotter *mut, Plotter *strain)
 	{
 		_mutPlot = mut;
 		_strainPlot = strain;
 	}
 	
-	Loader *loader()
+	Workbench *workbench()
 	{
-		return _loader;
+		return _bench;
 	}
 signals:
 	void start();
@@ -68,6 +71,7 @@ private:
 	Loader *_loader;
 
 	std::vector<std::string> _args;
+	Workbench *_bench;
 	MatrixView *_mv;
 	QThread *_worker;
 	QLabel *_dataLabel;

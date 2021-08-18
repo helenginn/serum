@@ -16,6 +16,7 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
+#include "Workbench.h"
 #include "SerumView.h"
 #include "MyDictator.h"
 #include "Loader.h"
@@ -24,16 +25,16 @@
 #include <QMouseEvent>
 #include <QLabel>
 #include <c4xsrc/MatrixView.h>
+#include <hcsrc/FileReader.h>
 #include "Plotter.h"
-//#include <QChart>
-//#include <QChartView>
 
 SerumView::SerumView(QWidget *p) : QMainWindow(p)
 {
 	_mutPlot = NULL;
 	_strainPlot = NULL;
 	_worker = NULL;
-	_loader = new Loader();
+	_bench = new Workbench();
+	_loader = new Loader(_bench);
 	
 	QWidget *central = new QWidget(this);
 	QVBoxLayout *vbox = new QVBoxLayout(NULL);
@@ -85,30 +86,31 @@ void SerumView::setCommandLineArgs(int argc, char *argv[])
 	_dictator->run();
 }
 
-void SerumView::loadDefinitions(std::string filename)
+void SerumView::loadSpreadsheet(std::string folder)
 {
-	_loader->load(filename);
+	_loader->parseSpreadsheet(folder);
+	_bench->setup();
 	updateView();
 }
 
 void SerumView::resultVectors(std::string filename)
 {
-	_loader->writeResultVectors(filename);
+	_bench->writeResultVectors(filename);
 	
 }
 
 void SerumView::refine()
 {
-	bool ready = prepareWorkForObject(_loader);
+	bool ready = prepareWorkForObject(_bench);
 	
 	if (!ready)
 	{
 		return;
 	}
 
-	connect(_loader, SIGNAL(resultReady()), this, SLOT(handleResult()),
+	connect(_bench, SIGNAL(resultReady()), this, SLOT(handleResult()),
 	        Qt::UniqueConnection);
-	connect(this, SIGNAL(start()), _loader, SLOT(refineLoop()),
+	connect(this, SIGNAL(start()), _bench, SLOT(refineLoop()),
 	        Qt::UniqueConnection);
 	_worker->start();
 
@@ -143,21 +145,23 @@ void SerumView::updateView()
 {
 	double **raw = NULL;
 	char ***names = NULL;
-	_loader->populateRaw(&raw, 0);
-	_loader->populateNames(&names);
+	_bench->populateRaw(&raw, 0);
+	_bench->populateNames(&names);
 	
-	double w = _loader->serumCount();
-	double h = _loader->strainCount();
+	double w = _bench->serumCount();
+	double h = _bench->strainCount();
 
 	MatrixView *mv = new MatrixView(NULL, w * 5, h * 5);
 	mv->populate(w, h, raw);
 	_dataLabel->setPixmap(QPixmap::fromImage(*mv));
 
-	_loader->populateRaw(&raw, 1);
+	/*
+	_bench->populateRaw(&raw, 1);
 	mv->populate(w, h, raw);
 	_modelLabel->setPixmap(QPixmap::fromImage(*mv));
+	*/
 
-	_loader->populateRaw(&raw, -1);
+	_bench->populateRaw(&raw, -1);
 	mv->populate(w, h, raw);
 	_errorLabel->setPixmap(QPixmap::fromImage(*mv));
 	_mv = mv;
@@ -167,28 +171,28 @@ void SerumView::updateView()
 	
 	if (_mutPlot)
 	{
-		_mutPlot->replot(_loader->mutations());
+		_mutPlot->replot(_bench->mutations());
 	}
 	
 	if (_strainPlot)
 	{
-		_strainPlot->replot(_loader->strains());
+		_strainPlot->replot(_bench->strains());
 	}
 }
 
 void SerumView::writeOut(std::string filename, int type)
 {	
-	_loader->writeOut(filename, type);
+	_bench->writeOut(filename, type);
 }
 
 void SerumView::antigenicity(std::string filename)
 {	
-	_loader->antigenicity(filename);
+	_bench->antigenicity(filename);
 }
 
 void SerumView::setScale(double scale)
 {
-	_loader->setScale(scale);
+	_bench->setScale(scale);
 	
 }
 
@@ -227,24 +231,43 @@ bool SerumView::prepareWorkForObject(QObject *object)
 
 void SerumView::run()
 {
-	bool ready = prepareWorkForObject(_loader);
+	bool ready = prepareWorkForObject(_bench);
 	
 	if (!ready)
 	{
 		return;
 	}
 
-	connect(_loader, SIGNAL(resultReady()), this, SLOT(handleResult()));
+	connect(_bench, SIGNAL(resultReady()), this, SLOT(handleResult()));
 
 	for (size_t i = 0; i < 30; i++)
 	{
-		_loader->refineLoop();
+		_bench->refineLoop();
 		if (i % 3 == 0)
 		{
-			_loader->writeResultVectors("vectors.csv");
-			_loader->antigenicity("antigen.csv");
+			_bench->writeResultVectors("vectors.csv");
+			_bench->antigenicity("antigen.csv");
 		}
 	}
 
-	_loader->writeResultVectors("vectors.csv");
+	_bench->writeResultVectors("vectors.csv");
+}
+
+void SerumView::acceptMutations(std::string muts)
+{
+	std::vector<std::string> bits = split(muts, '-');
+	int start = atoi(bits[0].c_str());
+
+	if (bits.size() < 2)
+	{
+		_loader->addAcceptableResidue(start);
+		return;
+	}
+
+	int end   = atoi(bits[1].c_str());
+	
+	for (int i = start; i < end; i++)
+	{
+		_loader->addAcceptableResidue(i);
+	}
 }

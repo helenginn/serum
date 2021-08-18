@@ -4,6 +4,7 @@ qt5 = import('qt5')
 qt5_dep = dependency('qt5', modules: ['Core', 'Gui', 'Widgets'], required : true)
 dep_gl = dependency('gl', required : true)
 png_dep = dependency('libpng')
+vag_dep = dependency('libvag')
 c4x_dep = dependency('libcluster4x')
 ica_dep = dependency('libica')
 helen3d = dependency('helen3d')
@@ -31,6 +32,7 @@ moc_files = qt5.preprocess(moc_headers : [
 'src/Loader.h', 
 'src/Plotter.h', 
 'src/SerumView.h', 
+'src/Workbench.h', 
 ],
 		moc_extra_arguments: ['-DMAKES_MY_MOC_HEADER_COMPILE'])
 
@@ -44,6 +46,8 @@ executable('something', gen_src, moc_files,
 'src/SerumView.cpp', 
 'src/Strain.cpp', 
 'src/Serum.cpp', 
+'src/Table.cpp', 
+'src/Workbench.cpp', 
 'src/main.cpp', 
 cpp_args: ['-std=c++11'], dependencies : [ 
 qt5_dep, 
@@ -51,6 +55,7 @@ c4x_dep,
 ica_dep, 
 dep_gl, 
 png_dep,
+vag_dep,
 helen3d,
 helencore
 ], install: true)
