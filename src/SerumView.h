@@ -23,6 +23,7 @@
 #include <QThread>
 
 class MyDictator;
+class DataPlot;
 class Plotter;
 class MatrixView;
 class Loader;
@@ -44,7 +45,12 @@ public:
 	void writeOut(std::string filename, int type);
 	void antigenicity(std::string filename);
 	void setScale(double scale);
+	void changeView(std::string filename);
 	void run();
+	
+	void tent(std::string strain);
+	void mutationPhoto(std::string last);
+	void strainPhoto(std::string last);
 	
 	void acceptMutations(std::string muts);
 	
@@ -54,14 +60,22 @@ public:
 		_strainPlot = strain;
 	}
 	
+	Plotter *strainPlot()
+	{
+		return _strainPlot;
+	}
+	
 	Workbench *workbench()
 	{
 		return _bench;
 	}
+	
+	void print(std::string prefix);
+public slots:
+	void resetView();
 signals:
 	void start();
 protected:
-	virtual void mousePressEvent(QMouseEvent *e);
 private slots:
 	void handleResult();
 	void updateView();
@@ -69,15 +83,15 @@ private:
 	bool prepareWorkForObject(QObject *object);
 	MyDictator *_dictator;
 	Loader *_loader;
+	DataPlot *_dataPlot;
+	DataPlot *_modelPlot;
+	DataPlot *_errorPlot;
 
+	std::string _view;
 	std::vector<std::string> _args;
 	Workbench *_bench;
 	MatrixView *_mv;
 	QThread *_worker;
-	QLabel *_dataLabel;
-	QLabel *_modelLabel;
-	QLabel *_errorLabel;
-	QLabel *_lWhat;
 	Plotter *_mutPlot;
 	Plotter *_strainPlot;
 };

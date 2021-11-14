@@ -15,44 +15,47 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
-#ifndef __serum__Plotter__
-#define __serum__Plotter__
 
+#include "Projection.h"
+#include <hcsrc/FileReader.h>
 #include <h3dsrc/SlipGL.h>
 
-class QTreeWidget;
-class Scatter;
-class Mutation;
-class Strain;
-class Tent;
-
-class Plotter : public SlipGL
+Projection::Projection(std::string filename)
 {
-Q_OBJECT
-public:
-	Plotter(QWidget *parent);
+	std::string details;
+	try
+	{
+		details = get_file_contents(filename);
+	}
+	catch (int e)
+	{
+		std::cout << "Could not open file, " << filename << std::endl;
+		return;
+	}
 	
-	void setTree(QTreeWidget *w);
-	void setTent(Tent *t);
+	std::vector<std::string> components = split(details, ' ');
+
+	mat4x4 m = make_mat4x4();
+
+	for (size_t i = 0; i < components.size() && i < 16; i++)
+	{
+		double d = atof(components[i].c_str());
+		m.vals[i] = d;
+	}
 	
-	void setShowsText(bool show);
-
-	void replot(const std::vector<Mutation *> &muts);
-	void replot(const std::vector<Strain *> &strains);
+	_mat = m;
+	_centre = empty_vec3();
 	
-	void setVisibleText(bool vis);
-	void setDepth(bool on);
-protected:
-	virtual void initializeGL();
-public slots:
-	void replotSelection();
-private:
-	bool _depth;
-	Scatter *_scatter;
-	QTreeWidget *_tree;
-	Tent *_tent;
+	if (components.size() >= 19)
+	{
+		_centre.x = atof(components[16].c_str());
+		_centre.y = atof(components[17].c_str());
+		_centre.z = atof(components[18].c_str());
+	}
+}
 
-};
-
-#endif
-
+void Projection::applyToGL(SlipGL *gl)
+{
+	gl->setModel(_mat);
+	gl->changeCentre(_centre);
+}

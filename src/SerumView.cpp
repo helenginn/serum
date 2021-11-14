@@ -16,9 +16,14 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
+#include "Tent.h"
+#include "Projection.h"
+#include <h3dsrc/Icosahedron.h>
 #include "Workbench.h"
 #include "SerumView.h"
+#include "Strain.h"
 #include "MyDictator.h"
+#include "DataPlot.h"
 #include "Loader.h"
 #include <iostream>
 #include <QVBoxLayout>
@@ -30,6 +35,7 @@
 
 SerumView::SerumView(QWidget *p) : QMainWindow(p)
 {
+	_dataPlot = NULL;
 	_mutPlot = NULL;
 	_strainPlot = NULL;
 	_worker = NULL;
@@ -41,32 +47,34 @@ SerumView::SerumView(QWidget *p) : QMainWindow(p)
 	central->setLayout(vbox);
 
 	{
-		QHBoxLayout *hbox = new QHBoxLayout(NULL);
 		QLabel *l = new QLabel("Data: ", this);
-		_lWhat = new QLabel("", this);
-		hbox->addWidget(l);
-		hbox->addWidget(_lWhat);
-		vbox->addLayout(hbox);
+		vbox->addWidget(l);
 	}
 
-	_dataLabel = new QLabel("", this);
-	vbox->addWidget(_dataLabel);
+	_dataPlot = new DataPlot(this);
+	_dataPlot->setType(0);
+	_dataPlot->setBench(_bench);
+	vbox->addWidget(_dataPlot);
 
 	{
 		QLabel *l = new QLabel("Model: ", this);
 		vbox->addWidget(l);
 	}
 
-	_modelLabel = new QLabel("", this);
-	vbox->addWidget(_modelLabel);
+	_modelPlot = new DataPlot(this);
+	_modelPlot->setType(1);
+	_modelPlot->setBench(_bench);
+	vbox->addWidget(_modelPlot);
 
 	{
 		QLabel *l = new QLabel("Error: ", this);
 		vbox->addWidget(l);
 	}
 
-	_errorLabel = new QLabel("", this);
-	vbox->addWidget(_errorLabel);
+	_errorPlot = new DataPlot(this);
+	_errorPlot->setType(-1);
+	_errorPlot->setBench(_bench);
+	vbox->addWidget(_errorPlot);
 	
 	setCentralWidget(central);
 }
@@ -118,56 +126,25 @@ void SerumView::refine()
 //	_loader->refineLoop();
 }
 
-void SerumView::mousePressEvent(QMouseEvent *e)
-{
-	std::string str;
-	{
-		QPoint p1 = _dataLabel->mapFromGlobal(e->globalPos());
-		str = _mv->getName(p1.x(), p1.y());
-	}
-
-	if (str.length() == 0)
-	{
-		QPoint p1 = _modelLabel->mapFromGlobal(e->globalPos());
-		str = _mv->getName(p1.x(), p1.y());
-	}
-
-	if (str.length() == 0)
-	{
-		QPoint p1 = _errorLabel->mapFromGlobal(e->globalPos());
-		str = _mv->getName(p1.x(), p1.y());
-	}
-	
-	_lWhat->setText(QString::fromStdString(str));
-}
-
 void SerumView::updateView()
 {
-	double **raw = NULL;
-	char ***names = NULL;
-	_bench->populateRaw(&raw, 0);
-	_bench->populateNames(&names);
-	
-	double w = _bench->serumCount();
-	double h = _bench->strainCount();
+	std::vector<Strain *> used;
+	for (size_t i = 0; i < _bench->strainCount(); i++)
+	{
+		if (_bench->strain(i)->serumCount() > 0)
+		{
+			used.push_back(_bench->strain(i));
+		}
+	}
 
-	MatrixView *mv = new MatrixView(NULL, w * 5, h * 5);
-	mv->populate(w, h, raw);
-	_dataLabel->setPixmap(QPixmap::fromImage(*mv));
+	_dataPlot->setStrains(used);
+	_dataPlot->redraw();
 
-	/*
-	_bench->populateRaw(&raw, 1);
-	mv->populate(w, h, raw);
-	_modelLabel->setPixmap(QPixmap::fromImage(*mv));
-	*/
+	_modelPlot->setStrains(used);
+	_modelPlot->redraw();
 
-	_bench->populateRaw(&raw, -1);
-	mv->populate(w, h, raw);
-	_errorLabel->setPixmap(QPixmap::fromImage(*mv));
-	_mv = mv;
-	_mv->setNames(names);
-	
-	free(raw);
+	_errorPlot->setStrains(used);
+	_errorPlot->redraw();
 	
 	if (_mutPlot)
 	{
@@ -270,4 +247,60 @@ void SerumView::acceptMutations(std::string muts)
 	{
 		_loader->addAcceptableResidue(i);
 	}
+}
+
+void SerumView::print(std::string prefix)
+{
+	_dataPlot->write(prefix);
+	_modelPlot->write(prefix);
+	_errorPlot->write(prefix);
+
+}
+
+void SerumView::tent(std::string strain)
+{
+	if (strain.length() == 0)
+	{
+		_strainPlot->setTent(NULL);
+		return;
+	}
+	Tent *tent = new Tent(_bench);
+	tent->makeBase(strain);
+	std::cout << "Making tent" << std::endl;
+
+	_strainPlot->setTent(tent);
+}
+
+void SerumView::resetView()
+{
+	changeView("");
+}
+
+void SerumView::changeView(std::string filename)
+{
+	if (filename.length() == 0)
+	{
+		filename = _view;
+	}
+
+	_view = filename;
+	
+	if (filename.length() == 0)
+	{
+		return;
+	}
+
+	Projection p(filename);
+	p.applyToGL(_strainPlot);
+	p.applyToGL(_mutPlot);
+}
+
+void SerumView::strainPhoto(std::string last)
+{
+	_strainPlot->saveImage(last);
+}
+
+void SerumView::mutationPhoto(std::string last)
+{
+	_mutPlot->saveImage(last);
 }

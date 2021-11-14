@@ -34,7 +34,6 @@ int main(int argc, char * argv[])
 	global->create();
 
 	setlocale(LC_NUMERIC, "C");
-	srand(time(NULL));
 	
 	std::cout << "Program version: " << CHECK_VERSION_COMMIT_ID << std::endl;
 	

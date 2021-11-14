@@ -28,7 +28,7 @@ Table::Table(std::string name)
 	_scale = 1;
 }
 
-void Table::addValue(Strain *strain, Serum *serum, double value)
+void Table::addValue(Strain *strain, Serum *serum, double value, bool two)
 {
 	if (std::find(_strains.begin(), _strains.end(), strain) == _strains.end())
 	{
@@ -53,11 +53,14 @@ void Table::addValue(Strain *strain, Serum *serum, double value)
 	_count++;
 
 	strain->addSerum(serum, this);
+	strain->incrementUses();
+	serum->strain()->incrementUses();
 	
 	Challenge ch;
 	ch.strain = strain;
 	ch.serum = serum;
 	ch.value = value;
+	ch.two = two;
 	_challenges.push_back(ch);
 }
 
@@ -76,11 +79,15 @@ void Table::reset()
 	_scale = 1;
 }
 
-double Table::challenge(int i, Strain **strainPtr, Serum **serumPtr)
+double Table::challenge(int i, Strain **strainPtr, Serum **serumPtr, bool *two)
 {
 	Challenge &ch = _challenges[i];
 	*strainPtr = ch.strain;
 	*serumPtr = ch.serum;
+	if (two != NULL)
+	{
+		*two = ch.two;
+	}
 
 	return ch.value;
 }

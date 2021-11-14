@@ -30,7 +30,7 @@ class Table
 public:
 	Table(std::string name);
 
-	void addValue(Strain *strain, Serum *serum, double value);
+	void addValue(Strain *strain, Serum *serum, double value, bool two);
 	double valueFor(Strain *strain, Serum *serum);
 	void reset();
 	
@@ -64,7 +64,8 @@ public:
 		return _challenges.size();
 	}
 	
-	double challenge(int i, Strain **strainPtr, Serum **serumPtr);
+	double challenge(int i, Strain **strainPtr, Serum **serumPtr,
+	                 bool *two = NULL);
 	
 	Serum *serum(int i)
 	{
@@ -86,6 +87,7 @@ private:
 		Strain *strain;
 		Serum *serum;
 		double value;
+		bool two;
 	} Challenge;
 
 	std::vector<Challenge> _challenges;

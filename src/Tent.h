@@ -16,28 +16,46 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __serum__Display__
-#define __serum__Display__
+#ifndef __Tent__Tent__
+#define __Tent__Tent__
 
-#include <QMainWindow>
+#include <h3dsrc/SlipObject.h>
 
-class QTabWidget;
-class SerumView;
+class Workbench;
 
-class Display : public QMainWindow
+class Tent : public SlipObject
 {
-Q_OBJECT
 public:
-	Display(int argc, char *argv[]);
+	Tent(Workbench *bench);
 	
-public slots:
-	void toggleText();
-	void rightClickStrain();
+	void makeBase(std::string strain);
+
+	void setWorkbench(Workbench *bench)
+	{
+		_bench = bench;
+	}
+	
+	Workbench *bench()
+	{
+		return _bench;
+	}
 
 private:
-	void makeMenu();
-	QTabWidget *_tabs;
-	SerumView *_view;
+	typedef struct
+	{
+		vec3 p;
+		double l;
+	} Distance;
+
+	static bool compare_distance(Distance &a, Distance &b)
+	{
+		return (a.l < b.l);
+	}
+
+	std::vector<vec3> _ps;
+	void closestPoints(vec3 v, std::vector<Distance> *results);
+
+	Workbench *_bench;
 
 };
 

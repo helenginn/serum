@@ -123,6 +123,11 @@ size_t Loader::doChallenge(std::vector<std::string > &lines, size_t line)
 
 	for (size_t i = 0; i < strainList.size(); i++)
 	{
+		if (strainList[i] == NULL)
+		{
+			continue;
+		}
+
 		std::cout << strainList[i]->name() << std::endl;
 	}
 	std::cout << std::endl;
@@ -191,9 +196,16 @@ size_t Loader::doChallenge(std::vector<std::string > &lines, size_t line)
 				throw -1;
 			}
 			
-			int dilution = atoi(bits[j].c_str());
+			int dilution = atof(bits[j].c_str());
 			double val = log(dilution) / log(10);
-			_currentTable->addValue(chosen, serum, val);
+			bool two = (dilution > 1e-6);
+			
+			if (dilution <= 1)
+			{
+				val = log(1) / log(10);
+			}
+
+			_currentTable->addValue(chosen, serum, val, two);
 		}
 		
 		next++;
@@ -372,6 +384,7 @@ void Loader::addNewSera(Strain *str, std::vector<std::string> &list)
 		}
 
 		Serum *serum = new Serum(list[i], str);
+		str->addChild(serum);
 		_sera.push_back(serum);
 		_name2Serum[serum->name()] = serum;
 	}

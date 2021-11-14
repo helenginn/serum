@@ -16,28 +16,22 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __serum__Display__
-#define __serum__Display__
+#ifndef __serum__Projection__
+#define __serum__Projection__
 
-#include <QMainWindow>
+#include <hcsrc/mat4x4.h>
 
-class QTabWidget;
-class SerumView;
+class SlipGL;
 
-class Display : public QMainWindow
+class Projection
 {
-Q_OBJECT
 public:
-	Display(int argc, char *argv[]);
-	
-public slots:
-	void toggleText();
-	void rightClickStrain();
+	Projection(std::string filename);
 
+	void applyToGL(SlipGL *gl);
 private:
-	void makeMenu();
-	QTabWidget *_tabs;
-	SerumView *_view;
+	mat4x4 _mat;
+	vec3 _centre;
 
 };
 

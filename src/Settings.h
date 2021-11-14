@@ -16,28 +16,28 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __serum__Display__
-#define __serum__Display__
+#ifndef __serum__Settings__
+#define __serum__Settings__
 
-#include <QMainWindow>
+#include <string>
+class Workbench;
 
-class QTabWidget;
-class SerumView;
-
-class Display : public QMainWindow
+class Settings
 {
-Q_OBJECT
 public:
-	Display(int argc, char *argv[]);
-	
-public slots:
-	void toggleText();
-	void rightClickStrain();
+	Settings(Workbench *workbench, std::string filename);
 
+	bool isValid()
+	{
+		return _valid;
+	}
+	
+	void apply();
 private:
-	void makeMenu();
-	QTabWidget *_tabs;
-	SerumView *_view;
+	Workbench *_bench;
+	std::string _filename;
+	std::string _contents;
+	bool _valid;
 
 };
 

@@ -64,6 +64,21 @@ public:
 		return _strains;
 	}
 	
+	Strain *strain(int i)
+	{
+		return _strains[i];
+	}
+	
+	Strain *strain(std::string name)
+	{
+		if (_name2Strain.count(name) == 0)
+		{
+			return NULL;
+		}
+
+		return _name2Strain[name];
+	}
+	
 	void setDimension(int dim)
 	{
 		_dim = dim;
@@ -121,6 +136,8 @@ public:
 	{
 		return _sera.size();
 	}
+	
+	void displaySettings(std::string filename);
 
 	static double resultForDirection(double *dir);
 	static double resultForVector(double *dir1, double *dir2);
@@ -129,7 +146,10 @@ public:
 	void setup();
 
 	void clusterMutations(std::string filename);
+	double modelForPair(Strain *strain, Serum *serum);
+	double aveModel(Strain *strain, Serum *serum);
 	Strain *nextStrain(double *score);
+	std::vector<Strain *> getStrains(std::string list);
 public slots:
 	void refineLoop();
 signals:
@@ -142,7 +162,6 @@ private:
 	void prepare();
 	void prepareVectors();
 	void addResult();
-	double modelForPair(Strain *strain, Serum *serum);
 	double vectorModelForPair(Strain *strain, Serum *serum);
 	double score();
 	double simpleScore(double weight);
@@ -182,6 +201,7 @@ private:
 	double _scale;
 	double _best;
 	static double *_scratch;
+	std::vector<double> _scores;
 	static int _dim;
 };
 

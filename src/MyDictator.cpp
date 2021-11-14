@@ -16,9 +16,11 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
+#include <hcsrc/FileReader.h>
 #include "MyDictator.h"
 #include "SerumView.h"
 #include "Workbench.h"
+#include "Plotter.h"
 
 MyDictator::MyDictator(SerumView *s) : Dictator()
 {
@@ -108,9 +110,55 @@ bool MyDictator::processRequest(std::string first, std::string last)
 	{
 		_serum->workbench()->setDimension(atoi(last.c_str()));
 	}
+	else if (first == "tent")
+	{
+		_serum->tent(last);
+	}
+	else if (first == "display-settings")
+	{
+		_serum->workbench()->displaySettings(last.c_str());
+	}
+	else if (first == "show-text")
+	{
+		_serum->strainPlot()->setShowsText(true);
+	}
+	else if (first == "hide-text")
+	{
+		_serum->strainPlot()->setShowsText(false);
+	}
+	else if (first == "strain-photo")
+	{
+		_serum->strainPhoto(last);
+	}
+	else if (first == "mutation-photo")
+	{
+		_serum->mutationPhoto(last);
+	}
+	else if (first == "select")
+	{
+		std::vector<Strain *> strains = _serum->workbench()->getStrains(last);
+		_serum->strainPlot()->replot(strains);
+	}
+	else if (first == "view")
+	{
+		_serum->changeView(last);
+	}
 	else if (first == "run")
 	{
 		_serum->run();
+	}
+	else if (first == "random-seed")
+	{
+		srand(atoi(last.c_str()));
+	}
+	else if (first == "print")
+	{
+		_serum->print(last);
+	}
+	else if (first == "model-type")
+	{
+		to_lower(last);
+		_properties[first] = last;
 	}
 
 	return true;

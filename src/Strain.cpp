@@ -18,6 +18,9 @@
 
 #include <hcsrc/FileReader.h>
 #include <libsrc/Anisotropicator.h>
+#include <hcsrc/maths.h>
+#include <h3dsrc/SlipObject.h>
+#include "MyDictator.h"
 #include "Table.h"
 #include "Strain.h"
 #include "Serum.h"
@@ -28,6 +31,10 @@
 
 Strain::Strain(std::string name)
 {
+	_chequered = false;
+	_red = -1;
+	_green = -1;
+	_blue = -1;
 	_free = false;
 	_refresh = true;
 	_name = name;
@@ -61,8 +68,30 @@ void Strain::setList(std::string list, std::vector<Mutation *> &unique)
 	_list.clear();
 
 	std::vector<std::string> contents = split(list, ',');
+	std::string type = MyDictator::valueForKey("model-type");
+	
+	bool add_muts = true;
+	bool add_strain = false;
+	bool add_strain_if_missing = false;
+	
+	if (type == "per-strain")
+	{
+		add_muts = false;
+		add_strain = true;
+	}
+	else if (type == "combi")
+	{
+		add_muts = true;
+		add_strain = false;
+		add_strain_if_missing = true;
+	}
+	else if (type == "both")
+	{
+		add_muts = true;
+		add_strain = true;
+	}
 
-	for (size_t i = 0; i < contents.size(); i++)
+	for (size_t i = 0; i < contents.size() && add_muts; i++)
 	{
 		trim(contents[i]);
 		
@@ -89,6 +118,14 @@ void Strain::setList(std::string list, std::vector<Mutation *> &unique)
 		}
 
 		m->addStrain(this);
+		_list.push_back(m);
+	}
+	
+	if ((_list.size() == 0 && add_strain_if_missing) || add_strain)
+	{
+		Mutation *m = new Mutation(name(), Workbench::dimensions());
+		m->addStrain(this);
+		unique.push_back(m);
 		_list.push_back(m);
 	}
 
@@ -141,6 +178,26 @@ vec3 Strain::aveDirection()
 	return ave;
 }
 
+void Strain::findAvePosition()
+{
+	vec3 ave = empty_vec3();
+
+	for (size_t i = 0; i < _list.size(); i++)
+	{
+		_list[i]->calculateCloud();
+		ave += _list[i]->centre();
+	}
+
+	int dim = Workbench::dimensions();
+	
+	for (size_t i = 0; i < dim && i < 3; i++)
+	{
+		_dir[i] = *(&ave.x + i);
+		_scaledDir[i] = _importance[i] * _dir[i];
+	}
+
+}
+
 void Strain::findPosition()
 {
 	if (_refresh == false)
@@ -173,6 +230,20 @@ void Strain::findPosition()
 	_refresh = false;
 }
 
+double Strain::aveVectorCompare(Strain *str)
+{
+	if (str == this)
+	{
+		return 0;
+	}
+	
+	findAvePosition();
+	str->findAvePosition();
+	
+	double val = Workbench::resultForVector(&_scaledDir[0], &str->_dir[0]);
+	return val;
+}
+
 double Strain::vectorCompare(Strain *str) 
 {
 	if (str == this)
@@ -184,7 +255,6 @@ double Strain::vectorCompare(Strain *str)
 	str->findPosition();
 	
 	double val = Workbench::resultForVector(&_scaledDir[0], &str->_dir[0]);
-	val -= str->ease();
 	return val;
 }
 
@@ -298,7 +368,7 @@ void Strain::calculateCloud()
 	{
 		vec3 ax = mat3x3_axis(_tensor, i);
 		double l = vec3_length(ax);
-		double scale = sqrt(l) / sqrt(trials());
+		double scale = sqrt(l);// / sqrt(trials());
 		if (scale == scale)
 		{
 			vec3_set_length(&ax, scale);
@@ -339,13 +409,53 @@ double Strain::averageEase()
 
 double Strain::ease()
 {
-	double sum = 0; 
+	double sum = 1; 
 	for (size_t i = 0; i < _list.size(); i++)
 	{
-		sum += _list[i]->ease();
+		double ease = _list[i]->ease();
+		sum += ease;
 	}
 	
-	sum += _ease;
-	
 	return sum;
+}
+
+int Strain::hash()
+{
+	int num = 0;
+	for (size_t i = 0; i < _list.size(); i++)
+	{
+		Mutation *mut = _list[i];
+		std::string name = mut->str();
+		
+		for (size_t j = 0; j < name.length(); j++)
+		{
+			num += (int)(name[j]);
+		}
+	}
+
+	return num % 360;
+}
+
+void Strain::recolourObject(SlipObject *obj)
+{
+	if (_red < 0 || _green < 0 || _blue < 0)
+	{
+		_red = hash();
+		_green = 20.0;
+		_blue = 50;
+		hsv_to_rgb(_red, _green, _blue);
+	}
+
+	obj->setColour(_red, _green, _blue);
+	obj->setAlpha(0.15);
+
+	obj->setExtra(_chequered ? 1 : 0, 0, 0, 0);
+}
+
+void Strain::incrementUses()
+{
+	for (size_t i = 0; i < _list.size(); i++)
+	{
+		_list[i]->incrementUses();
+	}
 }

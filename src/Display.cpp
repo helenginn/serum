@@ -18,6 +18,8 @@
 
 #include "Display.h"
 #include <QVBoxLayout>
+#include <QCheckBox>
+#include <QPushButton>
 #include <QMouseEvent>
 #include <QTabWidget>
 #include "SerumView.h"
@@ -34,6 +36,7 @@ Display::Display(int argc, char *argv[])
 	vbox->addWidget(_tabs);
 	
 	SerumView *view = new SerumView(NULL);
+	_view = view;
 	_tabs->addTab(view, "Serology matrix");
 
 	Plotter *mutPlot, *strainPlot;
@@ -42,12 +45,16 @@ Display::Display(int argc, char *argv[])
 		QWidget *pp = new QWidget(NULL);
 		QHBoxLayout *hbox = new QHBoxLayout(NULL);
 		pp->setLayout(hbox);
+
 		QTreeWidget *w = new QTreeWidget(NULL);
 		hbox->addWidget(w);
 		w->setMaximumSize(200, 10000);
+
 		mutPlot = new Plotter(NULL);
 		hbox->addWidget(mutPlot);
 		mutPlot->setTree(w);
+		mutPlot->setMinimumSize(1000, 1000);
+
 		_tabs->addTab(pp, "Mutation plot");
 	}
 
@@ -55,12 +62,31 @@ Display::Display(int argc, char *argv[])
 		QWidget *pp = new QWidget(NULL);
 		QHBoxLayout *hbox = new QHBoxLayout(NULL);
 		pp->setLayout(hbox);
+
+		QVBoxLayout *vbox = new QVBoxLayout(NULL);
 		QTreeWidget *w = new QTreeWidget(NULL);
-		hbox->addWidget(w);
+		vbox->addWidget(w);
 		w->setMaximumSize(200, 10000);
+		
+		QPushButton *p = new QPushButton("Reset view", NULL);
+		connect(p, &QPushButton::clicked, _view, &SerumView::resetView);
+		vbox->addWidget(p);
+		
+		QCheckBox *ch = new QCheckBox("Show text", NULL);
+		ch->setChecked(true);
+		ch->setObjectName("show_text");
+		connect(ch, &QCheckBox::stateChanged, this, &Display::toggleText);
+		vbox->addWidget(ch);
+
+		hbox->addLayout(vbox);
+
 		strainPlot = new Plotter(NULL);
 		hbox->addWidget(strainPlot);
 		strainPlot->setTree(w);
+		strainPlot->setMinimumSize(1000, 1000);
+		w->setContextMenuPolicy(Qt::CustomContextMenu);
+		connect(w, &QTreeWidget::customContextMenuRequested,
+		        this, &Display::rightClickStrain);
 		_tabs->addTab(pp, "Strain plot");
 	}
 
@@ -73,7 +99,20 @@ Display::Display(int argc, char *argv[])
 	setCentralWidget(central);
 }
 
+void Display::rightClickStrain()
+{
+
+}
+
 void Display::makeMenu()
 {
 
+}
+
+void Display::toggleText()
+{
+	QCheckBox *cb = findChild<QCheckBox *>("show_text");
+	bool checked = cb->checkState();
+
+	_view->strainPlot()->setVisibleText(checked);
 }

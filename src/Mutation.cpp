@@ -16,6 +16,7 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
+#include <iostream>
 #include <libsrc/Anisotropicator.h>
 #include "Mutation.h"
 #include "Strain.h"
@@ -29,6 +30,7 @@ Mutation::Mutation(std::string mut, int dims) : QTreeWidgetItem(0)
 	_mut = mut;
 	_silenced = false;
 	_best = 0;
+	_uses = 0;
 	_ease = 0;
 	_dim = dims;
 	
@@ -104,13 +106,14 @@ void Mutation::randomiseVector()
 	for (size_t j = 0; j < _dim; j++)
 	{
 		_vec[j] = ((rand() / (double)RAND_MAX) - 0.5);
+		_vec[j] /= 4;
 		
 		if (_silenced)
 		{
 			_vec[j] = 0;
 		}
 		
-		_ease = 0;
+		_ease = 0.05 * (rand() / (double)RAND_MAX - 0.5);
 	}
 }
 
@@ -265,11 +268,12 @@ void Mutation::calculateCloud()
 	{
 		std::vector<double> v = savedVector(i);
 		v.resize(3);
-		vec3 point;
+		vec3 point = empty_vec3();
 		for (size_t j = 0; j < _dim && j < 3; j++)
 		{
 			*(&point.x + j) = v[j] - all[j] / (double)trials();
 		}
+
 		points.push_back(point);
 	}
 	
@@ -281,7 +285,7 @@ void Mutation::calculateCloud()
 	{
 		vec3 ax = mat3x3_axis(_tensor, i);
 		double l = vec3_length(ax);
-		vec3_set_length(&ax, sqrt(l) / sqrt(_eases.size()));
+		vec3_set_length(&ax, sqrt(l));
 		mat3x3_set_axis(&_tensor, i, ax);
 	}
 	
@@ -302,14 +306,34 @@ void Mutation::calculateCloud()
 	_centre = centre;
 }
 
-double Mutation::averageEase()
+double Mutation::averageEase(double *stdev)
 {
 	double sum = 0; 
+	double sumsq = 0;
 	for (size_t i = 0; i < _eases.size(); i++)
 	{
 		sum += _eases[i];
+		sumsq += _eases[i] * _eases[i];
 	}
 	
 	sum /= (double)_eases.size();
+	sumsq /= (double)_eases.size();
+	
+	if (stdev)
+	{
+		*stdev = sqrt(sumsq - sum * sum);
+	}
+
 	return sum;
+}
+
+int Mutation::hash()
+{
+	int num = 0;
+	for (size_t j = 0; j < _mut.length(); j++)
+	{
+		num += (int)(_mut[j]) - (int)'A';
+	}
+
+	return 6 * (num % 60);
 }

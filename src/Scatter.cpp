@@ -19,6 +19,7 @@
 #include "Scatter.h"
 #include "Mutation.h"
 #include "Strain.h"
+#include "shaders/shEllipsoid.h"
 #include <hcsrc/maths.h>
 #include <h3dsrc/Icosahedron.h>
 #include <c4xsrc/GLAxis.h>
@@ -27,12 +28,14 @@
 
 Scatter::Scatter() : Plot3D()
 {
+	_alwaysMakeText = true;
 	setName("Scatter");
 	_renderType = GL_POINTS;
 	_fString = pointFsh();
 	_vString = pointVsh();
 	setShowText(true);
 	setPointSize(5);
+	setFontSize(4);
 }
 
 typedef struct
@@ -70,24 +73,27 @@ void Scatter::reorderMutations(std::vector<Mutation *> &muts)
 
 Icosahedron *Scatter::ico(mat3x3 tensor, vec3 pos, double colour, int tri)
 {
-	double r, g, b;
-	val_to_cluster4x_colour(colour, &r, &g, &b);
-	r /= 350; g /= 350; b /= 350;
-
 	Icosahedron *m = new Icosahedron();
 	for (size_t i = 0; i < tri; i++)
 	{
 		m->triangulate();
 	}
-	m->setColour(0.5, 0.5, 0.5);
-	m->setAlpha(0.3);
+	
+	vec3 random = empty_vec3();
+	float hue = colour;
+	float saturation = 80.0;
+	float value = 50;
+	hsv_to_rgb(hue, saturation, value);
+	mat3x3_scale(&tensor, 0.5, 0.5, 0.5);
 	m->rotateByMatrix(tensor);
 	m->addToVertices(pos);
-	double mute_r = 0.6 + (r - 0.5) * 0.6;
-	double mute_g = 0.6 + (g - 0.5) * 0.6;
-	double mute_b = 0.6 + (b - 0.5) * 0.6;
-	m->setColour(mute_r, mute_g, mute_b);
-	m->setAlpha(0.3);
+
+	m->setExtra(0, 0, 0, 0);
+	m->setNeedsExtra(true);
+	m->changeVertexShader(Ellipsoid_vsh());
+	m->changeFragmentShader(Ellipsoid_fsh());
+	m->setColour(hue, saturation, value);
+	m->setAlpha(0.2);
 
 	return m;
 }
@@ -117,7 +123,7 @@ void Scatter::strainWalk(Strain *strain)
 		{
 			mat3x3 t = list[n]->tensor();
 			double c = list[n]->averageEase() * 4;
-			Icosahedron *m = ico(t, pos, c);
+			Icosahedron *m = ico(t, pos, 0, 1);
 			_objs.push_back(m);
 		}
 		
@@ -164,7 +170,7 @@ void Scatter::populateFromMutations(const std::vector<Mutation *> &muts)
 
 	for (size_t n = 0; n < muts.size(); n++)
 	{
-		if (muts[n]->silenced())
+		if (muts[n]->silenced() || !muts[n]->isUsed())
 		{
 			continue;
 		}
@@ -175,7 +181,7 @@ void Scatter::populateFromMutations(const std::vector<Mutation *> &muts)
 		if (muts[n]->trials() >= 3)
 		{
 			mat3x3 t = muts[n]->tensor();
-			double col = muts[n]->averageEase() * 4;
+			double col = muts[n]->hash();
 			Icosahedron *m = ico(t, c, col, 2);
 			_objs.push_back(m);
 		}
@@ -214,34 +220,27 @@ void Scatter::populateFromStrains(const std::vector<Strain *> &strains)
 	for (size_t n = 0; n < strains.size(); n++)
 	{
 		vec3 point = strains[n]->aveDirection();
-		double ease = strains[n]->averageEase() * 4;
+		double ease = strains[n]->hash();
 		
 		if (strains[n]->trials() >= 3)
 		{
 			strains[n]->calculateCloud();
 			mat3x3 tensor = strains[n]->tensor();
 			Icosahedron *m = ico(tensor, point, ease, 2);
+			strains[n]->recolourObject(m);
 			_objs.push_back(m);
 		}
 
 		addPoint(point, strains[n]->name());
 		int idx = vertexCount() - 1;
 		Helen3D::Vertex *v = &_vertices[idx];
-		/*
-		v->color[0] = r;
-		v->color[1] = g;
-		v->color[2] = b;
 
-		_texts[idx]->setColour(r, g, b, 1);
-		*/
 		_texts[idx]->prepare();
 	}
 }
 
 void Scatter::render(SlipGL *gl)
 {
-	Plot3D::render(gl);
-
 	lockMutex();
 	for (size_t i = 0; i < _objs.size(); i++)
 	{
@@ -249,4 +248,5 @@ void Scatter::render(SlipGL *gl)
 		_objs[i]->reorderIndices();
 	}
 	unlockMutex();
+	Plot3D::render(gl);
 }

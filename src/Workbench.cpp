@@ -17,6 +17,7 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "Workbench.h"
+#include "Settings.h"
 #include "Strain.h"
 #include "Mutation.h"
 #include "Serum.h"
@@ -25,6 +26,7 @@
 #include <libsrc/shared_ptrs.h>
 #include <hcsrc/RefinementNelderMead.h>
 #include <hcsrc/RefinementLBFGS.h>
+#include <hcsrc/maths.h>
 #include <hcsrc/Any.h>
 #include <libica/svdcmp.h>
 #include <fstream>
@@ -47,7 +49,6 @@ Workbench::Workbench()
 	_refineStrainStrength = false;
 	_count = 0;
 	_scale = 0.3;
-
 }
 
 void Workbench::startOffsets()
@@ -154,7 +155,7 @@ void Workbench::prepareVectors()
 	for (size_t i = 0; i < _muts.size(); i++)
 	{
 		std::cout << _muts[i]->str() << " " << std::flush;
-		if (!_muts[i]->silenced())
+		if (!_muts[i]->silenced() && _muts[i]->isUsed())
 		{
 			usable++;
 		}
@@ -255,7 +256,6 @@ void Workbench::refineLoop()
 {
 	int count = 20;
 	std::cout << "*** REFINE ***" << std::endl;
-	srand(time(NULL));
 
 	prepare();
 
@@ -306,6 +306,8 @@ void Workbench::writeResultVectors(std::string filename)
 
 void Workbench::prepare()
 {
+	srand(_count + 1);
+
 	for (size_t i = 0; i < _strains.size(); i++)
 	{
 		_strains[i]->reset();
@@ -348,36 +350,36 @@ void Workbench::refine(int cycle)
 
 	for (size_t i = 0; i < _muts.size(); i++)
 	{
-		if (_muts[i]->silenced())
+		if (_muts[i]->silenced() || !_muts[i]->isUsed())
 		{
 			continue;
 		}
 
 		for (size_t j = 0; j < _dim; j++)
 		{
-			Any *any_real = new Any(_muts[i]->scalarPtr(j));
+			Any *any_real = new Any(_muts[i]->scalarPtr(j), 0.5);
 			_anys.push_back(any_real);
 			any_real->setRefresh(Mutation::refresh, _muts[i]);
 
 			std::string mut = _muts[i]->str();
 
-			n->addParameter(any_real, Any::get, Any::set, 0.2, 0.02, 
+			n->addParameter(any_real, Any::get, Any::set, 0.2, 0.01, 
 			                mut + "_" + i_to_str(j));
 		}
 
 		if (_refineEase && cycle > 5)
 		{
-			Any *any_real = new Any(_muts[i]->easePtr());
+			Any *any_real = new Any(_muts[i]->easePtr(), 0.5);
 			_anys.push_back(any_real);
 
 			std::string str = _muts[i]->str();
 
-			n->addParameter(any_real, Any::get, Any::set, 0.5, 0.02, 
+			n->addParameter(any_real, Any::get, Any::set, 0.2, 0.01, 
 			                str + "_ease");
 		}
 	}
 
-	for (size_t i = 0; i < _tables.size() && cycle > 10; i++)
+	for (size_t i = 0; i < _tables.size() && cycle > 10 && false; i++)
 	{
 		Any *any_real = new Any(_tables[i]->scalePtr());
 		_anys.push_back(any_real);
@@ -388,21 +390,6 @@ void Workbench::refine(int cycle)
 
 	for (size_t i = 0; i < _strains.size(); i++)
 	{
-		if (_refineEase && cycle > 10)
-		{
-			if (_strains[i]->name().rfind("wt-", 0) == 0)
-			{
-
-				Any *any_real = new Any(_strains[i]->easePtr());
-				_anys.push_back(any_real);
-
-				std::string str = _strains[i]->name();
-
-				n->addParameter(any_real, Any::get, Any::set, 0.5, 0.02, 
-				                str + "_ease");
-			}
-		}
-
 		if (_strains[i]->serumCount() <= _dim)
 		{
 //			continue;
@@ -428,7 +415,7 @@ void Workbench::refine(int cycle)
 
 			std::string str = _strains[i]->name();
 
-			n->addParameter(any_real, Any::get, Any::set, 0.2, 0.02, 
+			n->addParameter(any_real, Any::get, Any::set, 0.2, 0.01, 
 			                str + "_offset");
 		}
 		
@@ -440,7 +427,7 @@ void Workbench::refine(int cycle)
 
 			std::string str = _strains[i]->name();
 
-			n->addParameter(any_real, Any::get, Any::set, 0.2, 0.02, 
+			n->addParameter(any_real, Any::get, Any::set, 0.2, 0.01, 
 			                str + "_strength");
 		}
 	}
@@ -456,7 +443,7 @@ void Workbench::refine(int cycle)
 			_anys.push_back(any);
 			any->setRefresh(Strain::staticFindPosition, _sera[i]->strain());
 
-			n->addParameter(any, Any::get, Any::set, 0.5, 0.05, name + "_s");
+			n->addParameter(any, Any::get, Any::set, 0.5, 0.01, name + "_s");
 		}
 
 		if (_refineOffset)
@@ -466,7 +453,7 @@ void Workbench::refine(int cycle)
 			_anys.push_back(any);
 			any->setRefresh(Strain::staticFindPosition, _sera[i]->strain());
 
-			n->addParameter(any, Any::get, Any::set, 0.2, 0.02, name + "_o");
+			n->addParameter(any, Any::get, Any::set, 0.2, 0.01, name + "_o");
 		}
 	}
 	
@@ -481,14 +468,32 @@ void Workbench::refine(int cycle)
 	"\tData/model: " << target << std::endl;
 }
 
+double Workbench::aveModel(Strain *strain, Serum *serum)
+{
+	Strain *orig = serum->strain();
+	double strength = serum->strength();
+	strength *= orig->averageEase();
+
+	double offset = serum->offset() - orig->offset();
+	double result = orig->aveVectorCompare(strain);
+
+	double val = -result * strength;
+	val += offset;
+
+	return val;
+}
+
 double Workbench::modelForPair(Strain *strain, Serum *serum)
 {
 	Strain *orig = serum->strain();
 	double strength = serum->strength();
+	strength += orig->ease() - strain->ease();
+
 	double offset = serum->offset() - orig->offset();
 	double result = orig->vectorCompare(strain);
-
+	result *= result;
 	double val = -result * strength;
+
 	val += offset;
 
 	return val;
@@ -511,7 +516,8 @@ double Workbench::simpleScore(double weight)
 			Strain *challenge;
 			Serum *serum;
 
-			double data = _tables[i]->challenge(k, &challenge, &serum);
+			bool two = false;
+			double data = _tables[i]->challenge(k, &challenge, &serum, &two);
 			if (data != data)
 			{
 				continue;
@@ -528,6 +534,12 @@ double Workbench::simpleScore(double weight)
 			val *= scale;
 
 			double diff = (val - data) * (val - data);
+			
+			if (!two && val > data)
+			{
+				diff = 0;
+			}
+
 			diffs += diff;
 
 			count++;
@@ -649,7 +661,10 @@ void Workbench::writeOut(std::string filename, int type)
 				continue;
 			}
 
+			double remove = _sera[i]->strain()->defaultOffset();
 			double data = _strains[j]->serumValue(_sera[i]);
+			data -= remove;
+
 			double val = 0;
 
 			if (type == 0)
@@ -658,6 +673,9 @@ void Workbench::writeOut(std::string filename, int type)
 			}
 			
 			double model = modelForPair(_strains[j], _sera[i]);
+			double scale = _strains[j]->serumScale(_sera[i]);
+			model *= scale;
+			model -= remove;
 			
 			if (type == 1)
 			{
@@ -715,8 +733,7 @@ double Workbench::resultForDirection(double *dir)
 		}
 	}
 
-	double sq = sqrt(pos) - sqrt(neg);
-	sq = sqrt(sum);
+	double sq = sqrt(sum);
 	return sq;
 }
 
@@ -729,7 +746,7 @@ void Workbench::perResidueAntigenicity(std::string filename)
 {
 	std::ofstream file;
 	file.open(filename);
-	file << "mutation, x, y, z" << std::endl;
+	file << "mutation, ease, x, y, z, dist" << std::endl;
 	for (size_t i = 0; i < _muts.size(); i++)
 	{
 		if (_muts[i]->silenced())
@@ -737,12 +754,17 @@ void Workbench::perResidueAntigenicity(std::string filename)
 			continue;
 		}
 
+		double sum = 0;
 		file << _muts[i]->str() << ", ";
+		file << _muts[i]->ease() << ", ";
 		for (size_t j = 0; j < _dim; j++)
 		{
-			file << _muts[i]->scalar(j) << ", ";
+			double val = _muts[i]->scalar(j);
+			sum += val * val;
+			file << val << ", ";
 		}
-		file << std::endl;
+		sum = sqrt(sum);
+		file << sum << ", " << std::endl;
 	}
 	file.close();
 	
@@ -762,7 +784,7 @@ void Workbench::perResidueAntigenicity(std::string filename)
 	file.close();
 	
 	file.open("strain_" + filename);
-	file << "strain, x, y, z" << std::endl;
+	file << "strain, ease, x, y, z" << std::endl;
 
 	for (size_t i = 0; i < _strains.size(); i++)
 	{
@@ -770,6 +792,7 @@ void Workbench::perResidueAntigenicity(std::string filename)
 		std::vector<double> dir = _strains[i]->direction();
 		
 		file << _strains[i]->name() << ", ";
+		file << _strains[i]->averageEase() << ", ";
 		for (size_t j = 0; j < dir.size(); j++)
 		{
 			file << dir[j] << ", ";
@@ -802,7 +825,7 @@ void Workbench::antigenicity(std::string filename)
 {
 	std::ofstream file;
 	file.open(filename);
-	file << "mutation,antigenicity,+-" << std::endl;
+	file << "mutation,ease,+-,antigenicity,+-" << std::endl;
 
 	for (size_t i = 0; i < _muts.size(); i++)
 	{
@@ -819,8 +842,36 @@ void Workbench::antigenicity(std::string filename)
 		{
 			stdev = 0;
 		}
+		
+		double easedev = 0;
+		double ease = _muts[i]->averageEase(&easedev);
+		
+		if (!_muts[i]->isUsed())
+		{
+			stdev = 0;
+			mean = 0;
+			easedev = 0;
+			ease = 0;
+		}
 
-		file << _muts[i]->str() << "," << mean << "," << stdev << std::endl;
+		file << _muts[i]->str() << ",";
+		file << ease << "," << easedev << ",";
+		file << mean << "," << stdev << std::endl;
+	}
+
+	{
+		std::ofstream file;
+		file.open("serum_strength.csv");
+		file << "serum,strength" << std::endl;
+
+		for (size_t i = 0; i < _sera.size(); i++)
+		{
+			file << _sera[i]->name() << ",";
+			file << -_sera[i]->strain()->offset() + 
+			_sera[i]->offset() << std::endl;
+		}
+
+		file.close();
 	}
 }
 
@@ -829,6 +880,8 @@ void Workbench::updateSums()
 	_count++;
 	
 	double s = score();
+	_scores.push_back(s);
+
 	bool improved = false;
 	if (s < _best)
 	{
@@ -855,6 +908,14 @@ void Workbench::updateSums()
 	{
 		_strains[i]->saveEase();
 	}
+	
+	double ave = mean(_scores);
+	double stdev = standard_deviation(_scores);
+	std::cout << "Current scores: " << std::endl;
+	std::cout << "\tTotal: " << _scores.size() << std::endl;
+	std::cout << "\t Mean: " << ave << std::endl;
+	std::cout << "\t Stdev: " << stdev << std::endl;
+	
 	
 	rotations();
 
@@ -1163,4 +1224,31 @@ void Workbench::makeStrainFree(std::string str)
 void Workbench::markStrains(std::string strains)
 {
 
+}
+
+void Workbench::displaySettings(std::string filename)
+{
+	Settings settings(this, filename);
+	if (settings.isValid())
+	{
+		settings.apply();
+	}
+
+}
+
+std::vector<Strain *> Workbench::getStrains(std::string list)
+{
+	std::vector<std::string> words = split(list, ',');
+	std::vector<Strain *> strains;
+
+	for (size_t i = 0; i < words.size(); i++)
+	{
+		Strain *strain = _name2Strain[words[i]];
+		if (strain)
+		{
+			strains.push_back(strain);
+		}
+	}
+	
+	return strains;
 }

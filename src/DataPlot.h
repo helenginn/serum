@@ -16,29 +16,47 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __serum__Display__
-#define __serum__Display__
+#ifndef __serum__DataPlot__
+#define __serum__DataPlot__
 
-#include <QMainWindow>
+#include <QGraphicsScene>
+#include <QGraphicsView>
+#include <vector>
 
-class QTabWidget;
-class SerumView;
+class Strain;
+class Workbench;
+class Serum;
+class MatrixView;
 
-class Display : public QMainWindow
+class DataPlot : public QGraphicsView
 {
-Q_OBJECT
 public:
-	Display(int argc, char *argv[]);
+	DataPlot(QWidget *parent);
+
+	void setStrains(std::vector<Strain *> &strains);
 	
-public slots:
-	void toggleText();
-	void rightClickStrain();
+	void setType(int type)
+	{
+		_type = type;
+	}
+	
+	void setBench(Workbench *bench)
+	{
+		_bench = bench;
+	}
 
+	void redraw();
+	void write(std::string prefix);
+protected:
+	virtual void resizeEvent(QResizeEvent *);
 private:
-	void makeMenu();
-	QTabWidget *_tabs;
-	SerumView *_view;
+	QGraphicsScene *_scene;
+	
+	std::vector<Strain *> _strains;
+	std::vector<Serum *> _xsera, _ysera;
+	int _type;
 
+	Workbench *_bench;
 };
 
 #endif

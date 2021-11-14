@@ -16,33 +16,48 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
+#include "Tent.h"
 #include "Plotter.h"
+#include "Workbench.h"
 #include "Scatter.h"
 #include "Strain.h"
 #include "Mutation.h"
 #include <c4xsrc/GLAxis.h>
 #include <QTreeWidget>
+#include <h3dsrc/Icosahedron.h>
 
 Plotter::Plotter(QWidget *parent) : SlipGL(parent)
 {
+	_tent = NULL;
 	_r = 1; _g = 1; _b = 1;
 	setFocus(Qt::MouseFocusReason);
 	setFocusPolicy(Qt::StrongFocus);
 	_controlPressed = false;
 	_shiftPressed = false;
 	
+	if (false)
 	{
 		GLAxis *x = new GLAxis(make_vec3(1, 0, 0));
 		x->addText("x");
 		addObject(x);
 	}
-	
+
+	if (false)
 	{
 		GLAxis *y = new GLAxis(make_vec3(0, 1, 0));
 		y->addText("y");
 		addObject(y);
 	}
 	
+	Icosahedron *ico = new Icosahedron();
+	ico->triangulate();
+	ico->triangulate();
+	ico->resize(0.02);
+	addObject(ico);
+	
+	int dims = Workbench::dimensions();
+	
+	if (dims > 2)
 	{
 		GLAxis *z = new GLAxis(make_vec3(0, 0, 1));
 		z->addText("z");
@@ -50,7 +65,34 @@ Plotter::Plotter(QWidget *parent) : SlipGL(parent)
 	}
 	
 	_scatter = new Scatter();
+	_depth = false;
+	zFar = 100;
 	addObject(_scatter);
+}
+
+void Plotter::initializeGL()
+{
+	SlipGL::initializeGL();
+	setDepth(_depth);
+}
+
+void Plotter::setDepth(bool on)
+{
+	_depth = on;
+	if (on)
+	{
+		std::cout << "Enabling" << std::endl;
+		glEnable(GL_DEPTH_TEST);
+		glDepthMask(GL_TRUE);
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	}
+	else
+	{
+		std::cout << "Disabling" << std::endl;
+		glDisable(GL_DEPTH_TEST);
+	}
+
 }
 
 void Plotter::setTree(QTreeWidget *w)
@@ -132,4 +174,44 @@ void Plotter::replotSelection()
 	{
 		_scatter->populateFromStrains(strains);
 	}
+}
+
+void Plotter::setVisibleText(bool vis)
+{
+	_scatter->setShowText(vis);
+	
+	for (size_t i = 0; i < 16; i++)
+	{
+		std::cout << _model.vals[i] << " ";
+	}
+	
+	for (size_t i = 0; i < 3; i++)
+	{
+		std::cout << *(&_centre.x + i) << " ";
+	}
+	
+	std::cout << std::endl;
+}
+
+void Plotter::setTent(Tent *t)
+{
+	if (_tent != NULL)
+	{
+		removeObject(_tent);
+		delete _tent;
+		_tent = NULL;
+	}
+
+	_tent = t;
+	
+	if (_tent)
+	{
+		addObject(_tent);
+	}
+}
+
+void Plotter::setShowsText(bool show)
+{
+	_scatter->setShowText(show);
+
 }

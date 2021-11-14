@@ -94,7 +94,7 @@ public:
 		return &_ease;
 	}
 	
-	double averageEase();
+	double averageEase(double *stdev = NULL);
 	
 	double ease()
 	{
@@ -135,10 +135,22 @@ public:
 	{
 		return _res;
 	}
+	
+	void incrementUses()
+	{
+		_uses++;
+	}
+	
+	bool isUsed()
+	{
+		return _uses > 0;
+	}
 
 	void randomiseVector();
 	
 	void calculateCloud();
+	
+	int hash();
 	
 	std::vector<double> &asVector(double *from);
 	double crossCorrelation(int i, int j);
@@ -163,6 +175,7 @@ private:
 	double _ease;
 	int _res;
 	int _best;
+	int _uses;
 	std::map<int, std::vector<double> > _savedOrigs;
 	std::map<int, std::vector<double> > _saved;
 };
