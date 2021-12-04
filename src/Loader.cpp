@@ -103,7 +103,7 @@ size_t Loader::doChallenge(std::vector<std::string > &lines, size_t line)
 	{
 		trim(bits[i]);
 		
-		if (bits[i].length() == 0)
+		if (bits[i].length() == 0 || bits[i][0] == '#')
 		{
 			strainList.push_back(NULL);
 			continue;
@@ -177,7 +177,7 @@ size_t Loader::doChallenge(std::vector<std::string > &lines, size_t line)
 		}
 
 		Serum *serum = _name2Serum[bits[0]];
-
+		
 		for (size_t j = 1; j < bits.size(); j++)
 		{
 			trim(bits[j]);
@@ -190,10 +190,13 @@ size_t Loader::doChallenge(std::vector<std::string > &lines, size_t line)
 			Strain *chosen = strainList[idx];
 			if (chosen == NULL)
 			{
+				/*
 				std::string error = "Serum/strain value given for " +
 				bits[0] + " has missing header!";
 				std::cout << error << std::endl;
 				throw -1;
+				*/
+				continue;
 			}
 			
 			int dilution = atof(bits[j].c_str());
@@ -235,7 +238,7 @@ size_t Loader::doLine(std::vector<std::string> &lines, size_t line)
 		{
 			std::cout << "Unrecoverable error" << " ";
 			std::cout << _filename << " : " << next << std::endl;
-//			exit(0);
+			exit(0);
 		}
 	}
 
@@ -251,7 +254,7 @@ size_t Loader::doLine(std::vector<std::string> &lines, size_t line)
 		{
 			std::cout << "Unrecoverable error" << " ";
 			std::cout << _filename << " : " << next << std::endl;
-//			exit(0);
+			exit(0);
 		}
 		catch (std::string err)
 		{
@@ -261,7 +264,7 @@ size_t Loader::doLine(std::vector<std::string> &lines, size_t line)
 				std::cout << _filename << " : " << next << std::endl;
 				std::cout << err << std::endl;
 				error = true;
-//				exit(0);
+				exit(0);
 			}
 		}
 	}

@@ -25,7 +25,10 @@
 #include <h3dsrc/shaders/vStructure.h>
 #include <h3dsrc/shaders/fStructure.h>
 #include "shContours.h"
+#include "shLines.h"
 #include <iostream>
+
+bool Tent::_heat = true;
 
 Tent::Tent(Workbench *bench) : SlipObject()
 {
@@ -36,24 +39,12 @@ Tent::Tent(Workbench *bench) : SlipObject()
 
 void Tent::makeBase(std::string str)
 {
-	Icosahedron *ico = new Icosahedron();
-	ico->triangulate();
-	ico->triangulate();
-	ico->triangulate();
-	ico->setColour(0.0, 0.0, 0.0);
-	mat3x3 scale = make_mat3x3();
-	mat3x3_scale(&scale, 4, 4, 0.2);
-	ico->rotateByMatrix(scale);
-
-//	appendObject(ico);
-	delete ico;
-
 	Strain *strain = _bench->strain(str);
-	std::cout << strain->name() << std::endl;
 
 	for (size_t i = 0; i < _bench->strainCount(); i++)
 	{
 		Strain *challenge = _bench->strain(i);
+		std::cout << challenge->name() << std::endl;
 		
 		if (challenge->childrenCount() == 0)
 		{
@@ -90,7 +81,7 @@ void Tent::makeBase(std::string str)
 		mat3x3 scale = make_mat3x3();
 		double height = ave;
 		point.z = 0;
-		mat3x3_scale(&scale, 0.2, 0.2, 1);
+		mat3x3_scale(&scale, 0.2, 0.2, 0.2);
 		Icosahedron *ico = new Icosahedron();
 		ico->triangulate();
 
@@ -100,11 +91,20 @@ void Tent::makeBase(std::string str)
 		for (size_t j = 0; j < ico->vertexCount(); j++)
 		{
 			bool up = (ico->vertex(j).pos[2] > 0);
-			ico->vPointer()[j].pos[2] = (up ? height * (2.2) : 0);
-			ico->vPointer()[j].pos[2] = (up ? 1.0 : 0);
+			double h = height * 2;
+			if (up)
+			{
+				ico->vPointer()[j].pos[2] += h;
+			}
+			else
+			{
+				ico->vPointer()[j].pos[2] *= 0.2;
+			}
 		}
 		point.z = height * 2;
 		_ps.push_back(point);
+		ico->SlipObject::calculateNormals();
+		challenge->recolourObject(ico);
 
 		appendObject(ico);
 		delete ico;
@@ -121,6 +121,8 @@ void Tent::makeBase(std::string str)
 	}
 
 	Mesh *m = makeMesh(6);
+	double rad = m->averageRadius();
+	m->resize(3.5 / rad);
 
 	{
 		mat3x3 scale = make_mat3x3();
@@ -187,7 +189,11 @@ void Tent::makeBase(std::string str)
 	std::string v = Contour_vsh();
 	std::string f = Contour_fsh();
 	m->changeProgram(v, f);
+	_mesh = m;
+
+	useMode();
 }
+
 
 
 void Tent::closestPoints(vec3 v, std::vector<Distance> *results)
@@ -211,4 +217,39 @@ void Tent::closestPoints(vec3 v, std::vector<Distance> *results)
 	{
 		results->push_back(dists[i]);
 	}
+}
+
+void Tent::setHeatMode(bool heat)
+{
+	_heat = heat;
+}
+
+
+void Tent::useMode()
+{
+	if (_mesh == NULL)
+	{
+		return;
+	}
+
+	if (_heat)
+	{
+		_mesh->changeToTriangles();
+		std::string v = Contour_vsh();
+		std::string f = Contour_fsh();
+		_mesh->changeProgram(v, f);
+		v = Fade_vsh();
+		f = Fade_fsh();
+		changeProgram(v, f);
+	}
+	else
+	{
+		_mesh->changeToLines();
+		std::string v = Fade_vsh();
+		std::string f = Fade_fsh();
+		_mesh->setColour(0.2, 0.2, 0.2);
+		_mesh->changeProgram(v, f);
+		changeProgram(v, f);
+	}
+
 }

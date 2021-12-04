@@ -73,12 +73,15 @@ Plotter::Plotter(QWidget *parent) : SlipGL(parent)
 void Plotter::initializeGL()
 {
 	SlipGL::initializeGL();
-	setDepth(_depth);
+	glDisable(GL_DEPTH_TEST);
 }
 
 void Plotter::setDepth(bool on)
 {
+	initializeGL();
+
 	_depth = on;
+
 	if (on)
 	{
 		std::cout << "Enabling" << std::endl;
@@ -208,10 +211,42 @@ void Plotter::setTent(Tent *t)
 	{
 		addObject(_tent);
 	}
+
+	initializeGL();
+	setDepth(_depth);
 }
 
 void Plotter::setShowsText(bool show)
 {
 	_scatter->setShowText(show);
+}
 
+void Plotter::setHeatMode(bool heat)
+{
+	Tent::setHeatMode(heat);
+	
+	if (_tent != NULL)
+	{
+		_tent->useMode();
+	}
+	
+	if (!heat && _tent)
+	{
+		for (size_t i = 0; i < _objects.size(); i++)
+		{
+			_objects[i]->setDisabled(true);
+		}
+		
+		_tent->setDisabled(false);
+	}
+	else
+	{
+		for (size_t i = 0; i < _objects.size(); i++)
+		{
+			_objects[i]->setDisabled(false);
+		}
+	}
+	
+	initializeGL();
+	setDepth(true);
 }

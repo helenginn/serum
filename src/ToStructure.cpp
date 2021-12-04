@@ -16,53 +16,9 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __Tent__Tent__
-#define __Tent__Tent__
+#include "ToStructure.h"
 
-#include <h3dsrc/SlipObject.h>
-
-class Workbench;
-class Mesh;
-
-class Tent : public SlipObject
+ToStructure::ToStructure()
 {
-public:
-	Tent(Workbench *bench);
-	
-	void makeBase(std::string strain);
-	
-	static void setHeatMode(bool heat);
-	void useMode();
 
-	void setWorkbench(Workbench *bench)
-	{
-		_bench = bench;
-	}
-	
-	Workbench *bench()
-	{
-		return _bench;
-	}
-
-private:
-	typedef struct
-	{
-		vec3 p;
-		double l;
-	} Distance;
-
-	static bool compare_distance(Distance &a, Distance &b)
-	{
-		return (a.l < b.l);
-	}
-
-	std::vector<vec3> _ps;
-	void closestPoints(vec3 v, std::vector<Distance> *results);
-
-	Mesh *_mesh;
-	Workbench *_bench;
-
-	static bool _heat;
-};
-
-#endif
+}

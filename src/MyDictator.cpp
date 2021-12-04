@@ -110,6 +110,31 @@ bool MyDictator::processRequest(std::string first, std::string last)
 	{
 		_serum->workbench()->setDimension(atoi(last.c_str()));
 	}
+	else if (first == "assign-to-pdb")
+	{
+		_serum->workbench()->assignToPDB(last);
+	}
+	else if (first == "tent-mode")
+	{
+		bool heat = false;
+		if (last == "heat")
+		{
+			heat = true;
+		}
+
+		_serum->strainPlot()->setHeatMode(heat);
+	}
+	else if (first == "depth")
+	{
+		bool depth = true;
+		if (last == "off")
+		{
+			depth = false;
+		}
+
+		_serum->strainPlot()->setDepth(depth);
+		_serum->mutPlot()->setDepth(depth);
+	}
 	else if (first == "tent")
 	{
 		_serum->tent(last);

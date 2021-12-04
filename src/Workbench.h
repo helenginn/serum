@@ -41,10 +41,11 @@ public:
 	void populateRaw(double ***ptr, int type = 0);
 	void writeOut(std::string filename, int type);
 	void antigenicity(std::string filename);
+	void writeResultVectors(std::string filename);
+	void assignToPDB(std::string filename);
 	void reorderMutations();
 	void updateSums();
 	void setModelToAverage();
-	void writeResultVectors(std::string filename);
 	void populateNames(char ****ptr);
 	
 	void addMutations(std::vector<Mutation *> mutations);

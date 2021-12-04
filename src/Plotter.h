@@ -42,6 +42,8 @@ public:
 	
 	void setVisibleText(bool vis);
 	void setDepth(bool on);
+	
+	void setHeatMode(bool heat);
 protected:
 	virtual void initializeGL();
 public slots:

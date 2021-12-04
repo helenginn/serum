@@ -60,6 +60,11 @@ public:
 		_strainPlot = strain;
 	}
 	
+	Plotter *mutPlot()
+	{
+		return _mutPlot;
+	}
+	
 	Plotter *strainPlot()
 	{
 		return _strainPlot;

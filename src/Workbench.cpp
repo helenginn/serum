@@ -307,6 +307,7 @@ void Workbench::writeResultVectors(std::string filename)
 void Workbench::prepare()
 {
 	srand(_count + 1);
+	std::cout << "Random number: " << rand() / (double)RAND_MAX << std::endl;
 
 	for (size_t i = 0; i < _strains.size(); i++)
 	{
@@ -1251,4 +1252,9 @@ std::vector<Strain *> Workbench::getStrains(std::string list)
 	}
 	
 	return strains;
+}
+
+void Workbench::assignToPDB(std::string pdb)
+{
+
 }
