@@ -52,7 +52,7 @@ void Settings::apply()
 		std::string line = lines[i];
 		std::vector<std::string> bits = split(line, ' ');
 		
-		if (bits.size() < 0)
+		if (bits.size() <= 0)
 		{
 			continue;
 		}
@@ -83,11 +83,23 @@ void Settings::apply()
 			continue;
 		}
 		
-		if (bits[4] == "#")
+		int next = 4;
+		
+		if (bits[next] == "#")
 		{
 			std::cout << "Setting " << str->name() << " to chequered" << std::endl;
 			str->setChequered(true);
+			next++;
 		}
+		
+		if (bits.size() <= next)
+		{
+			continue;
+		}
+		
+		std::string display_name = bits[next];
+		str->setDisplayName(display_name);
+		next++;
 	}
 
 }

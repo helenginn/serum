@@ -65,8 +65,6 @@ Mutation::Mutation(std::string mut, int dims) : QTreeWidgetItem(0)
 	while (pos == old && count <= _mut.length())
 	{
 		count++;
-		val = strtol(old, &pos, 10);
-		pos++;
 		old++;
 	}
 	
@@ -105,8 +103,7 @@ void Mutation::randomiseVector()
 {
 	for (size_t j = 0; j < _dim; j++)
 	{
-		_vec[j] = ((rand() / (double)RAND_MAX) - 0.5);
-		_vec[j] /= 4;
+		_vec[j] = ((rand() / (double)RAND_MAX) - 0.5) / 10;
 		
 		if (_silenced)
 		{

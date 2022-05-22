@@ -218,11 +218,16 @@ typedef struct
 
 bool higher_seq(StrRes &a, StrRes &b)
 {
+	if (a.res == b.res)
+	{
+		return a.mut->str() < b.mut->str();
+	}
 	return (a.res < b.res);
 }
 
 void Workbench::reorderMutations()
 {
+	std::cout << "Reordering mutations!" << std::endl;
 	std::vector<StrRes> residues;
 	for (size_t i = 0; i < _muts.size(); i++)
 	{
@@ -232,15 +237,20 @@ void Workbench::reorderMutations()
 		char *old = &mut[0];
 		char *pos = old;
 		int val = 0;
+		bool found = false;
 		
-		while (pos == old)
+		while ((*old < '0' || *old > '9') && *old != '\0')
 		{
-			val = strtol(old, &pos, 10);
-			pos++;
 			old++;
 		}
-		
+
+		if (*old != '\0')
+		{
+			val = strtol(old, &pos, 10);
+		}
+			
 		res.res = val;
+
 		residues.push_back(res);
 	}
 
@@ -307,7 +317,7 @@ void Workbench::writeResultVectors(std::string filename)
 void Workbench::prepare()
 {
 	srand(_count + 1);
-	std::cout << "Random number: " << rand() / (double)RAND_MAX << std::endl;
+	std::cout << "Random number: " << rand() << std::endl;
 
 	for (size_t i = 0; i < _strains.size(); i++)
 	{
@@ -339,6 +349,7 @@ void Workbench::refine(int cycle)
 	{
 		setup();
 	}
+
 	score();
 	RefinementLBFGSPtr n = RefinementLBFGSPtr(new RefinementLBFGS());
 	n->setCycles(1000);
@@ -368,7 +379,7 @@ void Workbench::refine(int cycle)
 			                mut + "_" + i_to_str(j));
 		}
 
-		if (_refineEase && cycle > 5)
+		if (_refineEase && cycle > 10)
 		{
 			Any *any_real = new Any(_muts[i]->easePtr(), 0.5);
 			_anys.push_back(any_real);
@@ -391,9 +402,9 @@ void Workbench::refine(int cycle)
 
 	for (size_t i = 0; i < _strains.size(); i++)
 	{
-		if (_strains[i]->serumCount() <= _dim)
+		if (_strains[i]->childrenCount() == 0)
 		{
-//			continue;
+			continue;
 		}
 
 		for (size_t j = 0; j < _dim && _refineImportance; j++)
@@ -435,6 +446,11 @@ void Workbench::refine(int cycle)
 
 	for (size_t i = 0; i < _sera.size(); i++)
 	{
+		if (_sera[i]->strainCount() == 0)
+		{
+			continue;
+		}
+
 		std::string name = _sera[i]->name();
 
 		if (_refineStrength)
@@ -475,7 +491,7 @@ double Workbench::aveModel(Strain *strain, Serum *serum)
 	double strength = serum->strength();
 	strength *= orig->averageEase();
 
-	double offset = serum->offset() - orig->offset();
+	double offset = serum->offset() + orig->offset();
 	double result = orig->aveVectorCompare(strain);
 
 	double val = -result * strength;
@@ -490,7 +506,7 @@ double Workbench::modelForPair(Strain *strain, Serum *serum)
 	double strength = serum->strength();
 	strength += orig->ease() - strain->ease();
 
-	double offset = serum->offset() - orig->offset();
+	double offset = serum->offset() + orig->offset();
 	double result = orig->vectorCompare(strain);
 	result *= result;
 	double val = -result * strength;
@@ -758,14 +774,15 @@ void Workbench::perResidueAntigenicity(std::string filename)
 		double sum = 0;
 		file << _muts[i]->str() << ", ";
 		file << _muts[i]->ease() << ", ";
+
 		for (size_t j = 0; j < _dim; j++)
 		{
-			double val = _muts[i]->scalar(j);
-			sum += val * val;
-			file << val << ", ";
+//			double val = _muts[i]->scalar(j);
+//			sum += val * val;
+//			file << val << ", ";
 		}
-		sum = sqrt(sum);
-		file << sum << ", " << std::endl;
+//		sum = sqrt(sum);
+//		file << sum << ", " << std::endl;
 	}
 	file.close();
 	
@@ -790,14 +807,11 @@ void Workbench::perResidueAntigenicity(std::string filename)
 	for (size_t i = 0; i < _strains.size(); i++)
 	{
 		_strains[i]->findPosition();
-		std::vector<double> dir = _strains[i]->direction();
+		vec3 dir = _strains[i]->aveDirection();
 		
 		file << _strains[i]->name() << ", ";
 		file << _strains[i]->averageEase() << ", ";
-		for (size_t j = 0; j < dir.size(); j++)
-		{
-			file << dir[j] << ", ";
-		}
+		file << dir.x << ", " << dir.y << ", " << dir.z << ", ";
 		file << std::endl;
 	}
 
@@ -1254,7 +1268,9 @@ std::vector<Strain *> Workbench::getStrains(std::string list)
 	return strains;
 }
 
+
 void Workbench::assignToPDB(std::string pdb)
 {
 
 }
+

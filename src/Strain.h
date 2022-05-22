@@ -48,6 +48,21 @@ public:
 		return _name;
 	}
 	
+	const std::string &displayName()
+	{
+		if (_displayName.length())
+		{
+			return _displayName;
+		}
+
+		return _name;
+	}
+	
+	void setDisplayName(std::string name)
+	{
+		_displayName = name;
+	}
+	
 	double ease();
 
 	void saveEase();
@@ -211,6 +226,7 @@ public:
 	int hash();
 private:
 	std::string _name;
+	std::string _displayName;
 	std::vector<Mutation *> _list;
 	
 	std::map<Strain *, std::vector<double>> _strainVecs;

@@ -65,7 +65,7 @@ Plotter::Plotter(QWidget *parent) : SlipGL(parent)
 	}
 	
 	_scatter = new Scatter();
-	_depth = false;
+	_depth = true;
 	zFar = 100;
 	addObject(_scatter);
 }
@@ -73,7 +73,7 @@ Plotter::Plotter(QWidget *parent) : SlipGL(parent)
 void Plotter::initializeGL()
 {
 	SlipGL::initializeGL();
-	glDisable(GL_DEPTH_TEST);
+//	glDisable(GL_DEPTH_TEST);
 }
 
 void Plotter::setDepth(bool on)

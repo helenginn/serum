@@ -35,7 +35,7 @@ Scatter::Scatter() : Plot3D()
 	_vString = pointVsh();
 	setShowText(true);
 	setPointSize(5);
-	setFontSize(4);
+	setFontSize(12);
 }
 
 typedef struct
@@ -85,15 +85,20 @@ Icosahedron *Scatter::ico(mat3x3 tensor, vec3 pos, double colour, int tri)
 	float value = 50;
 	hsv_to_rgb(hue, saturation, value);
 	mat3x3_scale(&tensor, 0.5, 0.5, 0.5);
-	m->rotateByMatrix(tensor);
+	mat3x3 matrix = make_mat3x3();
+	mat3x3_scale(&matrix, 0.05, 0.05, 0.05);
+	m->rotateByMatrix(matrix);
 	m->addToVertices(pos);
 
 	m->setExtra(0, 0, 0, 0);
 	m->setNeedsExtra(true);
-	m->changeVertexShader(Ellipsoid_vsh());
-	m->changeFragmentShader(Ellipsoid_fsh());
+//	m->changeVertexShader(Ellipsoid_vsh());
+//	m->changeFragmentShader(Ellipsoid_fsh());
+
+	m->changeVertexShader(Foggy_vsh());
+	m->changeFragmentShader(Foggy_fsh());
+
 	m->setColour(hue, saturation, value);
-	m->setAlpha(0.2);
 
 	return m;
 }
@@ -131,7 +136,7 @@ void Scatter::strainWalk(Strain *strain)
 		
 		if (n == list.size() - 1)
 		{
-			str += " (" + strain->name() + ")";
+			str += " (" + strain->displayName() + ")";
 		}
 
 		addPoint(pos, str);
@@ -228,10 +233,11 @@ void Scatter::populateFromStrains(const std::vector<Strain *> &strains)
 			mat3x3 tensor = strains[n]->tensor();
 			Icosahedron *m = ico(tensor, point, ease, 2);
 			strains[n]->recolourObject(m);
+			m->setAlpha(1.0);
 			_objs.push_back(m);
 		}
 
-		addPoint(point, strains[n]->name());
+		addPoint(point, strains[n]->displayName());
 		int idx = vertexCount() - 1;
 		Helen3D::Vertex *v = &_vertices[idx];
 

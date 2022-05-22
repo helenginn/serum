@@ -32,6 +32,9 @@ public:
 	
 public slots:
 	void toggleText();
+	void rotatingMovie();
+	void rotateX();
+	void rotateZ();
 	void rightClickStrain();
 
 private:
