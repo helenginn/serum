@@ -43,7 +43,7 @@ void Loader::parseSpreadsheet(std::string folder)
 
 	try
 	{
-		csvs = glob(search);
+		csvs = glob_pattern(search);
 	}
 	catch (std::runtime_error &err)
 	{
