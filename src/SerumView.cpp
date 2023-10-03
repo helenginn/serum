@@ -95,9 +95,10 @@ void SerumView::applySettings(Settings &s)
 		ball_scale = atof(s.valueFor("ball_scale").c_str());
 	}
 	
+	std::cout << "ball scale: " << ball_scale << std::endl;
+	Plot3D::setFontSize(8 * text_scale);
 	_strainPlot->setBallScale(ball_scale);
 	_mutPlot->setBallScale(ball_scale);
-	Plot3D::setFontSize(text_scale);
 }
 
 void SerumView::setCommandLineArgs(int argc, char *argv[])

@@ -235,8 +235,8 @@ void Scatter::populateFromStrains(const std::vector<Strain *> &strains,
 			strains[n]->calculateCloud();
 			mat3x3 tensor = strains[n]->tensor();
 			Icosahedron *m = ico(tensor, point, ease, 2);
-			m->resize(scale);
 			strains[n]->recolourObject(m);
+			m->resize(scale);
 			m->setAlpha(1.0);
 			_objs.push_back(m);
 		}
