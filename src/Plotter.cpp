@@ -109,7 +109,7 @@ void Plotter::setTree(QTreeWidget *w)
 
 void Plotter::replot(const std::vector<Mutation *> &muts)
 {
-	_scatter->populateFromMutations(muts);
+	_scatter->populateFromMutations(muts, _ballScale);
 
 	for (size_t i = 0; i < muts.size(); i++)
 	{
@@ -124,7 +124,7 @@ void Plotter::replot(const std::vector<Mutation *> &muts)
 
 void Plotter::replot(const std::vector<Strain *> &strains)
 {
-	_scatter->populateFromStrains(strains);
+	_scatter->populateFromStrains(strains, _ballScale);
 
 	for (size_t i = 0; i < strains.size(); i++)
 	{
@@ -172,10 +172,10 @@ void Plotter::replotSelection()
 		}
 	}
 
-	_scatter->populateFromMutations(list);
+	_scatter->populateFromMutations(list, _ballScale);
 	if (strains.size())
 	{
-		_scatter->populateFromStrains(strains);
+		_scatter->populateFromStrains(strains, _ballScale);
 	}
 }
 

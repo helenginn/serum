@@ -24,6 +24,7 @@
 #include <complex>
 #include <map>
 #include <QObject>
+#include "Settings.h"
 
 class Mutation;
 class Strain;
@@ -138,7 +139,7 @@ public:
 		return _sera.size();
 	}
 	
-	void displaySettings(std::string filename);
+	Settings displaySettings(std::string filename);
 
 	static double resultForDirection(double *dir);
 	static double resultForVector(double *dir1, double *dir2);

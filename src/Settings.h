@@ -20,12 +20,24 @@
 #define __serum__Settings__
 
 #include <string>
+#include <map>
+
 class Workbench;
 
 class Settings
 {
 public:
 	Settings(Workbench *workbench, std::string filename);
+	
+	bool hasValue(const std::string &key)
+	{
+		return _dict.count(key);
+	}
+	
+	const std::string &valueFor(const std::string &key) const
+	{
+		return _dict.at(key);
+	}
 
 	bool isValid()
 	{
@@ -39,6 +51,7 @@ private:
 	std::string _contents;
 	bool _valid;
 
+	std::map<std::string, std::string> _dict; 
 };
 
 #endif

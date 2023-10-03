@@ -19,6 +19,7 @@
 #include "Tent.h"
 #include "Projection.h"
 #include <h3dsrc/Icosahedron.h>
+#include <h3dsrc/Plot3D.h>
 #include "Workbench.h"
 #include "SerumView.h"
 #include "Strain.h"
@@ -77,6 +78,26 @@ SerumView::SerumView(QWidget *p) : QMainWindow(p)
 	vbox->addWidget(_errorPlot);
 	
 	setCentralWidget(central);
+}
+
+void SerumView::applySettings(Settings &s)
+{
+	float text_scale = 1; float ball_scale = 1;
+	bool has_text = s.hasValue("text_scale");
+	bool has_ball = s.hasValue("ball_scale");
+
+	if (has_text)
+	{
+		text_scale = atof(s.valueFor("text_scale").c_str());
+	}
+	if (has_ball)
+	{
+		ball_scale = atof(s.valueFor("ball_scale").c_str());
+	}
+	
+	_strainPlot->setBallScale(ball_scale);
+	_mutPlot->setBallScale(ball_scale);
+	Plot3D::setFontSize(text_scale);
 }
 
 void SerumView::setCommandLineArgs(int argc, char *argv[])

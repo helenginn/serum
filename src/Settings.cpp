@@ -57,6 +57,17 @@ void Settings::apply()
 			continue;
 		}
 		
+		if (bits[0] == "set")
+		{
+			if (bits.size() < 3)
+			{
+				continue;
+			}
+			std::string keyword = bits[1];
+			std::string value = bits[2];
+			_dict[keyword] = value;
+		}
+		
 		Strain *str = _bench->strain(bits[0]);
 		if (str == NULL)
 		{

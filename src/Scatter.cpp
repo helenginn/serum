@@ -167,7 +167,8 @@ void Scatter::clearBalls()
 
 }
 
-void Scatter::populateFromMutations(const std::vector<Mutation *> &muts)
+void Scatter::populateFromMutations(const std::vector<Mutation *> &muts,
+                                    float scale)
 {
 	repopulate();
 	clearBalls();
@@ -188,6 +189,7 @@ void Scatter::populateFromMutations(const std::vector<Mutation *> &muts)
 			mat3x3 t = muts[n]->tensor();
 			double col = muts[n]->hash();
 			Icosahedron *m = ico(t, c, col, 2);
+			m->resize(scale);
 			_objs.push_back(m);
 		}
 
@@ -210,7 +212,8 @@ void Scatter::populateFromMutations(const std::vector<Mutation *> &muts)
 	}
 }
 
-void Scatter::populateFromStrains(const std::vector<Strain *> &strains)
+void Scatter::populateFromStrains(const std::vector<Strain *> &strains,
+                                  float scale)
 {
 	repopulate();
 	clearBalls();
@@ -232,6 +235,7 @@ void Scatter::populateFromStrains(const std::vector<Strain *> &strains)
 			strains[n]->calculateCloud();
 			mat3x3 tensor = strains[n]->tensor();
 			Icosahedron *m = ico(tensor, point, ease, 2);
+			m->resize(scale);
 			strains[n]->recolourObject(m);
 			m->setAlpha(1.0);
 			_objs.push_back(m);

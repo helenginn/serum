@@ -1241,7 +1241,7 @@ void Workbench::markStrains(std::string strains)
 
 }
 
-void Workbench::displaySettings(std::string filename)
+Settings Workbench::displaySettings(std::string filename)
 {
 	Settings settings(this, filename);
 	if (settings.isValid())
@@ -1249,6 +1249,7 @@ void Workbench::displaySettings(std::string filename)
 		settings.apply();
 	}
 
+	return settings;
 }
 
 std::vector<Strain *> Workbench::getStrains(std::string list)

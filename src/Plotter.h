@@ -43,6 +43,16 @@ public:
 	void setVisibleText(bool vis);
 	void setDepth(bool on);
 	
+	void setTextScale(const float &scale)
+	{
+		_textScale = scale;
+	}
+	
+	void setBallScale(const float &scale)
+	{
+		_ballScale = scale;
+	}
+	
 	void setHeatMode(bool heat);
 protected:
 	virtual void initializeGL();
@@ -54,6 +64,8 @@ private:
 	QTreeWidget *_tree;
 	Tent *_tent;
 
+	float _ballScale = 1;
+	float _textScale = 1;
 };
 
 #endif

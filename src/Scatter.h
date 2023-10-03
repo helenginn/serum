@@ -33,8 +33,10 @@ public:
 	
 	void populate() {};
 
-	void populateFromMutations(const std::vector<Mutation *> &muts);
-	void populateFromStrains(const std::vector<Strain *> &strains);
+	void populateFromMutations(const std::vector<Mutation *> &muts,
+	                           float scale);
+	void populateFromStrains(const std::vector<Strain *> &strains,
+	                         float scale);
 	void strainWalk(Strain *strain);
 	
 	virtual size_t axisCount()

@@ -19,6 +19,7 @@
 #include <hcsrc/FileReader.h>
 #include "MyDictator.h"
 #include "SerumView.h"
+#include "Settings.h"
 #include "Workbench.h"
 #include "Plotter.h"
 
@@ -141,7 +142,8 @@ bool MyDictator::processRequest(std::string first, std::string last)
 	}
 	else if (first == "display-settings")
 	{
-		_serum->workbench()->displaySettings(last.c_str());
+		Settings s = _serum->workbench()->displaySettings(last.c_str());
+		_serum->applySettings(s);
 	}
 	else if (first == "show-text")
 	{

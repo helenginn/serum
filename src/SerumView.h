@@ -31,6 +31,7 @@ class QThread;
 class QLabel;
 class QMouseEvent;
 class Workbench;
+class Settings;
 
 class SerumView : public QMainWindow
 {
@@ -51,6 +52,7 @@ public:
 	void tent(std::string strain);
 	void mutationPhoto(std::string last);
 	void strainPhoto(std::string last);
+	void applySettings(Settings &s);
 	
 	void acceptMutations(std::string muts);
 	
